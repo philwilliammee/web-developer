@@ -1,4 +1,4 @@
-import { codeBotInstance } from "./code-bot";
+import { designAssistantInstance } from "./design-assistant-bot";
 import { ConsoleWrapper } from "./console-wrapper";
 import { Notebook } from "./notebook";
 import { MonacoEditor } from "./components/MonacoEditor";
@@ -6,11 +6,9 @@ import { ButtonSpinner } from "./components/ButtonSpinner";
 
 export class Cell {
   private id: number;
-  private notebook: Notebook;
   private codeEditor: MonacoEditor | null = null;
   private outputElement: HTMLElement | null;
   private promptInput: HTMLInputElement | null;
-  private fileInput: HTMLInputElement | null;
   private buttonSpinner: ButtonSpinner | null = null;
   public element: HTMLElement;
   private isGenerating: boolean = false;
@@ -19,11 +17,9 @@ export class Cell {
 
   constructor(id: number, notebook: Notebook, initialCode: string = "") {
     this.id = id;
-    this.notebook = notebook;
     this.element = this.createElement();
     this.outputElement = this.element.querySelector(".output-content") as HTMLElement;
     this.promptInput = this.element.querySelector(".prompt-input") as HTMLInputElement;
-    this.fileInput = this.element.querySelector(".file-input") as HTMLInputElement;
     this.editorContainer = this.element.querySelector(".monaco-editor-container") as HTMLElement;
     this.resizeHandle = this.element.querySelector(".resize-handle") as HTMLElement;
 
@@ -49,10 +45,6 @@ export class Cell {
       <div class="cell-header">
         <span class="cell-id">Cell #${this.id}</span>
         <button class="delete-btn">Delete</button>
-      </div>
-      <div class="file-upload">
-        <input type="file" class="file-input" accept=".csv">
-        <button class="btn btn-green upload-btn">Upload CSV</button>
       </div>
       <div class="prompt-section">
         <form class="prompt-form">
@@ -127,9 +119,6 @@ export class Cell {
     const executeButton = this.element.querySelector(".execute-btn") as HTMLButtonElement;
     executeButton.addEventListener("click", () => this.executeCode());
 
-    const uploadButton = this.element.querySelector(".upload-btn") as HTMLButtonElement;
-    uploadButton.addEventListener("click", () => this.uploadFile());
-
     const deleteButton = this.element.querySelector(".delete-btn") as HTMLButtonElement;
     deleteButton.addEventListener("click", () => {
       this.element.dispatchEvent(
@@ -150,54 +139,24 @@ export class Cell {
     }
   }
 
-
-
-  private uploadFile(): void {
-    if (this.fileInput?.files?.length) {
-      const file = this.fileInput.files[0];
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (reader.result) {
-          const data = this.parseCSV(reader.result as string);
-          const fileName = file.name.replace(/[^a-zA-Z0-9]/g, '_'); // Sanitize file name
-          this.notebook.addFileToContext(fileName, data); // Add to shared context
-          if (this.outputElement) {
-            this.outputElement.textContent = `File "${file.name}" uploaded successfully! You can access it as "file_${fileName}".`;
-          }
-        }
-      };
-      reader.readAsText(file);
-    }
-  }
-
-
-  private parseCSV(data: string): any[] {
-    const rows = data.split('\n');
-    const headers = rows[0].split(',');
-    return rows.slice(1).map(row => {
-      const values = row.split(',');
-      return headers.reduce((acc, header, index) => {
-        acc[header.trim()] = values[index]?.trim() || '';
-        return acc;
-      }, {} as Record<string, any>);
-    });
-  }
-
   private async generateCode(): Promise<void> {
     const prompt = this.promptInput?.value.trim();
     if (prompt && !this.isGenerating) {
       this.setLoading(true);
       try {
-        const { code, description } = await codeBotInstance.generateCode(prompt);
+        const { html, css, javascript, description } = await designAssistantInstance.generateWebDesign(prompt);
+
         if (this.codeEditor) {
-          this.codeEditor.setValue(code);
+          const combinedCode = `<html>\n${html}\n<style>\n${css}\n</style>\n<script>\n${javascript}\n</script>`;
+          this.codeEditor.setValue(combinedCode);
         }
+
         if (this.outputElement) {
-          this.outputElement.textContent = `Code generated successfully:\n${description}`;
+          this.outputElement.textContent = `Web design generated successfully:\n${description}`;
         }
       } catch (error: any) {
         if (this.outputElement) {
-          this.outputElement.textContent = `Error generating code: ${error.message}`;
+          this.outputElement.textContent = `Error generating design: ${error.message}`;
         }
       } finally {
         this.setLoading(false);
@@ -205,22 +164,30 @@ export class Cell {
     }
   }
 
-  private async executeCode(): Promise<void> {
+  async executeCode(): Promise<void> {
     const consoleWrapper = new ConsoleWrapper();
     try {
       const code = this.codeEditor?.getValue() || "";
 
       // Add the executed code to the chat context as a user message
-      codeBotInstance.addToChatContext({
+      designAssistantInstance.addToChatContext({
         role: "user",
         content: [{ text: `Executing code:\n${code}`, type: "text" }],
       });
 
-      // Execute the code within the shared context
-      const result = await this.notebook.executeInContext(code);
+      // Wrap code execution in a try-catch to handle errors
+      let result: any;
+      let consoleOutput = "";
 
-      // Get the console output
-      const consoleOutput = consoleWrapper.getLogs();
+      try {
+        consoleWrapper.capture(); // Start capturing console logs
+        result = eval(code); // Execute the code in the browser's environment
+        consoleOutput = consoleWrapper.getLogs(); // Get the captured logs
+      } catch (executionError: any) {
+        consoleOutput = `Execution error: ${executionError.message}`;
+      } finally {
+        consoleWrapper.restore(); // Restore the original console
+      }
 
       // Prepare the formatted output
       let output = "";
@@ -232,25 +199,25 @@ export class Cell {
         output += `Return value: ${this.formatOutput(result)}`;
       }
 
-          // Truncate output if necessary
-    let truncated = false;
-    if (output.length > 1000) {
-      output = output.slice(0, 1000) + "...";
-      truncated = true;
-    }
+      // Truncate output if necessary
+      let truncated = false;
+      if (output.length > 1000) {
+        output = output.slice(0, 1000) + "...";
+        truncated = true;
+      }
 
-    // Add the execution result to the chat context as an assistant message
-    codeBotInstance.addToChatContext({
-      role: "assistant",
-      content: [
-        {
-          text: `Execution result:\n${output || "No output"}${
-            truncated ? "\n(Note: Output has been truncated to 1000 characters.)" : ""
-          }`,
-          type: "text",
-        },
-      ],
-    });
+      // Add the execution result to the chat context as an assistant message
+      designAssistantInstance.addToChatContext({
+        role: "assistant",
+        content: [
+          {
+            text: `Execution result:\n${output || "No output"}${
+              truncated ? "\n(Note: Output has been truncated to 1000 characters.)" : ""
+            }`,
+            type: "text",
+          },
+        ],
+      });
 
       // Display the output in the cell
       if (this.outputElement) {
@@ -260,7 +227,7 @@ export class Cell {
       const errorMessage = `Error: ${error.message}`;
 
       // Add the error message to the chat context as an assistant message
-      codeBotInstance.addToChatContext({
+      designAssistantInstance.addToChatContext({
         role: "assistant",
         content: [{ text: errorMessage, type: "text" }],
       });
@@ -269,8 +236,6 @@ export class Cell {
       if (this.outputElement) {
         this.outputElement.textContent = errorMessage;
       }
-    } finally {
-      consoleWrapper.restore();
     }
   }
 

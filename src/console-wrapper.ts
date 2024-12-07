@@ -5,21 +5,37 @@ export class ConsoleWrapper {
 
   constructor() {
     this.logs = [];
+  }
+
+  /**
+   * Starts capturing console logs.
+   */
+  capture(): void {
     if (!ConsoleWrapper.isOverridden) {
-      console.info('ConsoleWrapper: Overriding console methods this is mostly for errors and warnings');
+      console.info('ConsoleWrapper: Capturing console logs');
       this.setupConsoleOverrides();
       ConsoleWrapper.isOverridden = true;
     }
+    this.clear(); // Clear logs for a fresh capture session
   }
 
+  /**
+   * Clears the captured logs.
+   */
   clear(): void {
     this.logs = [];
   }
 
+  /**
+   * Retrieves the captured logs as a single string.
+   */
   getLogs(): string {
     return this.logs.join('\n');
   }
 
+  /**
+   * Sets up console method overrides to capture logs.
+   */
   private setupConsoleOverrides(): void {
     const methods: Array<keyof Console> = ['log', 'info', 'warn', 'error'];
 
@@ -48,6 +64,9 @@ export class ConsoleWrapper {
     });
   }
 
+  /**
+   * Restores the original console methods.
+   */
   restore(): void {
     const methods: Array<keyof Console> = ['log', 'info', 'warn', 'error'];
     methods.forEach((method) => {
