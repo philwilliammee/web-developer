@@ -76,7 +76,7 @@ Your output should always be consistent, concise, and adhere to the defined sche
       anthropic_version: "bedrock-2023-05-31",
       system: this.systemPrompt,
       messages: this.chatContext, // Include the full chat context
-      max_tokens: 1000,
+      max_tokens: 20000,
       temperature: 0.5,
     };
 

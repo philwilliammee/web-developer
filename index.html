@@ -18,14 +18,17 @@
                 <h1>AI Web Design Assistant</h1>
             </div>
         </header>
-        <div id="notebook"></div>
-
-        <!-- Iframe container for dynamically rendered content -->
-        <div id="iframeContainer" class="iframe-container">
-            <iframe id="outputIframe" sandbox="allow-scripts allow-same-origin allow-modals" style="width: 100%; height: 500px; border: 1px solid #ccc;"></iframe>
+        <div class="main-content">
+            <div class="left-column">
+                <div id="notebook"></div>
+            </div>
+            <div class="right-column">
+                <div class="iframe-container">
+                    <iframe id="outputIframe" sandbox="allow-scripts allow-same-origin allow-modals"></iframe>
+                </div>
+            </div>
         </div>
     </div>
-
     <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
