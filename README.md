@@ -1,110 +1,143 @@
-# JavaScript Notebook Editor
+# AI Web Design Assistant
 
-This project is a notebook-style web-based editor for writing, executing, and sharing JavaScript code. It allows users to:
-1. Write and edit JavaScript code in individual "cells."
-2. Execute code with shared context across all cells.
-3. Generate code snippets via a bot.
-4. Capture and display console outputs within each cell.
+This project is a notebook-style web-based editor designed for generating, editing, and visualizing HTML, CSS, and JavaScript content dynamically. Powered by an AI assistant, it enables users to:
+1. Write and edit web design code (HTML, CSS, and JavaScript) in a Monaco Editor.
+2. Execute code and visualize outputs in an isolated iframe.
+3. Generate web design snippets dynamically using AI prompts.
+4. Display user and assistant interactions in a chat context.
 
 ---
 
 ## **Features**
-1. **Dynamic Cells**:
-   - Each cell acts as an independent code editor with execution and output display capabilities.
-   - Supports addition, deletion, and execution of cells.
+1. **Dynamic Code Generation**:
+   - Leverages the `WebDesignAssistant` AI bot to generate code snippets based on user-provided prompts.
 
-2. **Code Generation**:
-   - Uses a prompt-based `CodeBot` to generate code snippets dynamically.
+2. **Real-Time Execution**:
+   - Executes code in the Monaco Editor and renders the result in an iframe.
+   - Captures logs and errors during execution.
 
-3. **Shared Context**:
-   - Cells share a common execution context, allowing code in one cell to access variables and functions defined in another.
-
-4. **Console Output Capture**:
-   - Captures `console.log`, `console.error`, and other console outputs during code execution and displays them in the cell output section.
+3. **Interactive Chat Context**:
+   - Tracks user questions and AI responses in a conversational format.
 
 ---
 
 ## **Implementation Details**
 ### **Project Structure**
-- **`cell.js`**:
-  - Defines the `Cell` class, which represents an individual notebook cell. Each cell:
-    - Has a code editor (`<textarea>`), a prompt input, and execution functionality.
-    - Displays the output or any error from code execution.
-    - Supports event listeners for execution, code generation, and deletion.
-- **`code-bot.js`**:
-  - Implements a mock `CodeBot` class for generating code snippets based on prompts.
-- **`console-wrapper.js`**:
-  - Overrides console methods (`log`, `info`, `warn`, `error`) to capture logs during code execution and restores them afterward.
-- **`main.js`**:
-  - Initializes the notebook by creating the main `Notebook` instance.
-- **`notebook.js`**:
-  - Defines the `Notebook` class to manage multiple cells.
-  - Handles shared execution context and cell operations (add, delete, execute).
-- **`shared-context.js`**:
-  - Implements a `SharedContext` class for evaluating code in a shared environment.
-  - Updates context variables dynamically after code execution.
+- **`web-design-assistant.ts`**:
+  - Manages the editor, chat context, and iframe rendering.
+  - Includes methods for:
+    - Handling user prompts.
+    - Generating web design code via the AI assistant.
+    - Executing and rendering code dynamically.
+- **`design-assistant-bot.ts`**:
+  - Implements AI-powered code generation for web design snippets based on prompts.
+- **`console-wrapper.ts`**:
+  - Captures `console.log`, `console.error`, and other console outputs during code execution and displays them in the chat context.
+- **`components/MonacoEditor.ts`**:
+  - Integrates the Monaco Editor for real-time code editing.
 
 ---
 
-## **Significant Data Structures**
+## **Significant Classes**
 
-### **1. Cell**
-Represents a single code cell in the notebook.
+### **1. WebDesignAssistant**
+Manages the entire application, consolidating the notebook, editor, and execution logic.
 
 ```typescript
-interface Cell {
-  id: number;                      // Unique identifier for the cell.
-  notebook: Notebook;              // Reference to the parent notebook instance.
-  element: HTMLDivElement;         // DOM element representing the cell.
-  codeEditor: HTMLTextAreaElement; // Textarea for JavaScript code input.
-  outputElement: HTMLElement;      // Output display section.
-  promptInput: HTMLInputElement;   // Input for prompts to the code bot.
+class WebDesignAssistant {
+  private codeEditor: MonacoEditor | null;
+  private chatContextElement: HTMLElement | null;
+  private outputElement: HTMLElement | null;
+
+  constructor(containerId: string);
+
+  generateCode(prompt: string): void;
+  executeCode(): void;
+  appendToChatContext(role: "user" | "assistant", message: string): void;
 }
 ```
 
-### **2. Notebook**
-Manages all cells in the editor.
+### **2. ConsoleWrapper**
+Captures console logs and errors during code execution.
+
 ```typescript
-interface Notebook {
-  container: HTMLElement;          // DOM container for the notebook.
-  cells: Map<number, Cell>;        // Collection of cells mapped by ID.
-  nextId: number;                  // ID to be assigned to the next cell.
-  sharedContext: SharedContext;    // Shared context for executing cell code.
+class ConsoleWrapper {
+  capture(): void;
+  getLogs(): string;
+  restore(): void;
 }
-
-### **3. SharedContext**
-interface SharedContext {
-  context: Record<string, any>;    // Key-value storage for shared variables and functions.
-
-  evaluate(code: string): any;     // Executes a string of JavaScript code in the shared context.
-}
-
 ```
 
-example prompts:
+---
 
-Solve and chart the equation: x² + 5x - 6 = 0
+## **Example Prompts**
+### Web Design Prompts:
+- **"Make a simple example page."**
+  - Generates a basic HTML structure with linked CSS and JavaScript.
+- **"Create a contact form with name, email, and message fields."**
+  - Outputs a styled HTML form with appropriate fields and a submit button.
 
-graph the equation as a function, show the values where x = 0.
+### JavaScript and Visualization Prompts:
+- **"Solve and chart the equation: x² + 5x - 6 = 0."**
+  - Generates a script to solve the equation and visualize it using a chart library.
+- **"Generate a function that calculates the Fibonacci sequence from 1 to 1000 and chart it."**
+  - Outputs a script that calculates and charts the Fibonacci sequence.
 
-generate an example "function" chart with a height of 400.
+### Physics/Math Problems:
+- **"An airplane accelerates down a runway at 3.20 m/s² for 32.8 s. Determine the distance traveled before takeoff."**
+  - Outputs JavaScript code to calculate and display the result.
+- **"A builder is constructing a roof. The wood he is using is 4m long, and the peak of the roof needs to be 2m high. What angle should the piece of wood make with the base of the roof?"**
+  - Generates code to calculate and display the result dynamically.
 
+---
 
-An airplane accelerates down a runway at 3.20 m/s2 for 32.8 s until is finally lifts off the ground. Determine the distance traveled before takeoff.
-- Answer 1720
+## **How to Use**
+1. **Start the Development Server**:
+   - Run the following commands:
+     ```bash
+     npm install
+     npm run dev
+     ```
 
-With what speed in miles/hr (1 m/s = 2.23 mi/hr) must an object be thrown to reach a height of 91.5 m (equivalent to one football field)? Assume negligible air resistance.
-- Answer: vi = 94.4 mi/hr
+2. **Access the Application**:
+   - Open your browser and navigate to `http://localhost:5173`.
 
-Initial velocity needed: 42.37 m/s
-This is equivalent to 94.49 miles per hour
+3. **Generate Code**:
+   - Use the chat panel to input prompts.
+   - View the generated code in the Monaco Editor.
 
-A surveyor wants to know the height of a skyscraper. He places his inclinometer on a tripod  1 m 1m from the ground. At a distance of  50 m 50m from the skyscraper, he records an angle of elevation of  8 2 ∘ 82  ∘  .  What is the height of the skyscraper? Give your answer to one decimal place.
-- 356.8m
+4. **Execute Code**:
+   - Modify the generated code if needed.
+   - Click the `Execute` button to render the output.
 
+---
 
- A builder is constructing a roof. The wood he is using for the sloped section of the roof is 4m long and the peak of the roof needs to be 2m high. What angle should the piece of wood make with the base of the roof?
- - The wood should make an angle of 30° with the base of the roof.
+## **Example Outputs**
+### 1. Simple Web Page:
+**Prompt**: *"Make a simple example page."*
 
+```html
+<html>
+  <head>
+    <title>Simple Example</title>
+    <style>
+      .container {
+        text-align: center;
+        margin-top: 50px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Welcome to My Page</h1>
+      <button onclick="alert('Hello!')">Click Me</button>
+    </div>
+  </body>
+</html>
+```
 
-generate a function that calculates the fibonacci sequence 1 tp 1000 and chart it.
+```javascript
+console.log('Web Page Generated Successfully!');
+```
+
+---
