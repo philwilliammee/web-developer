@@ -31,7 +31,7 @@ export class Notebook {
 
   private addSingleCell(): void {
     if (this.container) {
-      this.cell = new Cell("// Write your code here...");
+      this.cell = new Cell("<h1>Write your HTML, CSS, and JavaScript code here...</h1>");
       this.container.appendChild(this.cell.element);
     }
   }

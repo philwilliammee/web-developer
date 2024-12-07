@@ -130,6 +130,12 @@ h1 {
   gap: 1rem;
 } */
 
+.editor-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-right: 16px;
+}
+
 .cell {
   height: calc(100vh - var(--header-height));
   background-color: var(--cell-bg);
@@ -137,6 +143,7 @@ h1 {
   display: grid;
   grid-template-rows: 1fr auto auto;
   gap: 1rem;
+  overflow-x: auto;
 }
 
 .monaco-editor-wrapper {
@@ -145,6 +152,9 @@ h1 {
   min-height: 200px;
   display: flex;
   flex-direction: column;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  padding: 4px;
 }
 
 .monaco-editor-container {
@@ -226,23 +236,36 @@ h1 {
 
 .prompt-input {
   flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  transition: all 0.2s;
+  padding: 0.75rem 1rem; /* Slightly larger padding for better usability */
+  border: 1px solid #d1d5db; /* Softer border color */
+  border-radius: 0.5rem; /* Slightly more rounded corners */
+  font-size: 1rem; /* Larger font for readability */
+  font-family: inherit; /* Ensures the font matches the app's overall typography */
+  background-color: #ffffff; /* Explicitly set background color */
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s; /* Smoother transitions */
+  resize: vertical; /* Allows vertical resizing for better input handling */
+  min-height:  50px;
 }
 
 .prompt-input:disabled {
-  background-color: #f3f4f6;
+  background-color: #f9fafb; /* Lighter shade for disabled state */
+  border-color: #e5e7eb; /* Matches the disabled state border */
   cursor: not-allowed;
+  color: #9ca3af; /* Muted text color for disabled input */
 }
 
 .prompt-input:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: var(--primary-color); /* Dynamic primary color for consistency */
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* Subtle shadow effect */
+  background-color: #f9fafe; /* Slight tint for focus state */
 }
+
+.prompt-input::placeholder {
+  color: #9ca3af; /* Light gray placeholder color */
+  font-style: italic; /* Adds subtle emphasis */
+}
+
 
 .animate-spin {
   animation: spin 1s linear infinite;

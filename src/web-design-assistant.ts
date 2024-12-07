@@ -66,7 +66,7 @@ export class WebDesignAssistant {
     // Initialize Monaco Editor
     this.codeEditor = new MonacoEditor(
       editorDiv,
-      "// Write your code here...",
+      "<h1>Write your HTML, CSS, and JavaScript code here...</h1>",
       (value: string) => {
         // Handle onChange if needed
       }

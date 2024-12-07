@@ -1,13 +1,13 @@
-import { designAssistantInstance } from "./design-assistant-bot";
-import { ConsoleWrapper } from "./console-wrapper";
-import { MonacoEditor } from "./components/MonacoEditor";
 import { ButtonSpinner } from "./components/ButtonSpinner";
+import { MonacoEditor } from "./components/MonacoEditor";
 import { ResizeHandler } from "./components/ResizeHandler";
+import { ConsoleWrapper } from "./console-wrapper";
+import { designAssistantInstance } from "./design-assistant-bot";
 
 export class Cell {
   private codeEditor: MonacoEditor | null = null;
   private chatMessages: HTMLElement;
-  private promptInput: HTMLInputElement | null;
+  private promptInput: HTMLTextAreaElement | null;
   private buttonSpinner: ButtonSpinner | null = null;
   public element: HTMLElement;
   private isGenerating: boolean = false;
@@ -18,7 +18,7 @@ export class Cell {
   constructor(initialCode: string = "") {
     this.element = this.createElement();
     this.chatMessages = this.element.querySelector(".chat-messages") as HTMLElement;
-    this.promptInput = this.element.querySelector(".prompt-input") as HTMLInputElement;
+    this.promptInput = this.element.querySelector(".prompt-input") as HTMLTextAreaElement;
     this.editorContainer = this.element.querySelector(".monaco-editor-container") as HTMLElement;
     this.editorWrapper = this.element.querySelector(".monaco-editor-wrapper") as HTMLElement;
 
@@ -43,10 +43,12 @@ export class Cell {
     cell.innerHTML = `
       <div class="monaco-editor-wrapper">
         <div class="monaco-editor-container"></div>
-        <button class="btn btn-blue execute-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-          Execute
-        </button>
+        <div class="editor-actions">
+          <button class="btn btn-blue execute-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+            Execute
+          </button>
+        </div>
         <div class="resize-handle">
           <div class="resize-handle-line"></div>
           <div class="resize-handle-line"></div>
@@ -56,15 +58,14 @@ export class Cell {
       <div class="chat-section">
         <div class="chat-messages"></div>
         <form class="prompt-form">
-          <input type="text" class="prompt-input" placeholder="Enter your prompt for Code-Bot..." value="">
-          <button type="submit" class="btn btn-green generate-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M12 8v8"></path>
-              <path d="M8 12h8"></path>
-            </svg>
-            Generate Code
-          </button>
+          <textarea class="prompt-input" placeholder="Enter your prompt for Code-Bot..."></textarea>
+          <div>
+            <button type="submit" class="btn btn-green generate-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="21 12 9 18 9 6 21 12"></polygon>
+              </svg>
+            </button>
+          </div>
         </form>
       </div>
     `;
@@ -116,6 +117,11 @@ export class Cell {
 
         this.appendToChatContext("user", prompt);
         this.appendToChatContext("assistant", description);
+
+        // Clear the textarea input
+        if (this.promptInput) {
+          this.promptInput.value = "";
+        }
       } catch (error: any) {
         this.appendToChatContext("assistant", `Error generating design: ${error.message}`);
       } finally {
@@ -129,27 +135,22 @@ export class Cell {
     try {
       const code = this.codeEditor?.getValue() || "";
 
-      // Add the executed code to the chat context as a user message
       this.appendToChatContext("user", `Executing code`);
 
-      // Target the iframe element by its ID
       const iframeContainer = document.getElementById("outputIframe") as HTMLIFrameElement;
       if (!iframeContainer) {
         throw new Error("Output iframe not found");
       }
 
-      // Use contentWindow.document to access the iframe's document
       const iframeDocument = iframeContainer.contentWindow?.document;
       if (!iframeDocument) {
         throw new Error("Unable to access the iframe's document");
       }
 
-      // Write the generated code into the iframe's document
       iframeDocument.open();
       iframeDocument.write(code);
       iframeDocument.close();
 
-      // Capture console logs
       consoleWrapper.capture();
       console.log("Code executed successfully");
       const consoleOutput = consoleWrapper.getLogs();
