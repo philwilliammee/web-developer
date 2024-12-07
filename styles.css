@@ -101,7 +101,7 @@ h1 {
   font-size: 0.875rem;
 }
 
-.delete-btn {
+/* .delete-btn {
   color: var(--danger-color);
   background: none;
   border: none;
@@ -111,7 +111,7 @@ h1 {
 
 .delete-btn:hover {
   color: #b91c1c;
-}
+} */
 
 .prompt-form {
   display: flex;

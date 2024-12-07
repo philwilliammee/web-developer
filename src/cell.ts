@@ -1,11 +1,9 @@
 import { designAssistantInstance } from "./design-assistant-bot";
 import { ConsoleWrapper } from "./console-wrapper";
-import { Notebook } from "./notebook";
 import { MonacoEditor } from "./components/MonacoEditor";
 import { ButtonSpinner } from "./components/ButtonSpinner";
 
 export class Cell {
-  private id: number;
   private codeEditor: MonacoEditor | null = null;
   private outputElement: HTMLElement | null;
   private promptInput: HTMLInputElement | null;
@@ -15,8 +13,7 @@ export class Cell {
   private editorContainer: HTMLElement | null = null;
   private resizeHandle: HTMLElement | null = null;
 
-  constructor(id: number, notebook: Notebook, initialCode: string = "") {
-    this.id = id;
+  constructor(initialCode: string = "") {
     this.element = this.createElement();
     this.outputElement = this.element.querySelector(".output-content") as HTMLElement;
     this.promptInput = this.element.querySelector(".prompt-input") as HTMLInputElement;
@@ -42,10 +39,6 @@ export class Cell {
     const cell = document.createElement("div");
     cell.className = "cell";
     cell.innerHTML = `
-      <div class="cell-header">
-        <span class="cell-id">Cell #${this.id}</span>
-        <button class="delete-btn">Delete</button>
-      </div>
       <div class="prompt-section">
         <form class="prompt-form">
           <input type="text" class="prompt-input" placeholder="Enter your prompt for Code-Bot..." value="">
@@ -118,16 +111,6 @@ export class Cell {
   private setupEventListeners(): void {
     const executeButton = this.element.querySelector(".execute-btn") as HTMLButtonElement;
     executeButton.addEventListener("click", () => this.executeCode());
-
-    const deleteButton = this.element.querySelector(".delete-btn") as HTMLButtonElement;
-    deleteButton.addEventListener("click", () => {
-      this.element.dispatchEvent(
-        new CustomEvent("cellDelete", {
-          bubbles: true,
-          detail: { id: this.id },
-        })
-      );
-    });
 
     const form = this.element.querySelector(".prompt-form") as HTMLFormElement;
     if (form) {
@@ -227,18 +210,6 @@ export class Cell {
       }
     } finally {
       consoleWrapper.restore();
-    }
-  }
-
-
-  private formatOutput(value: any): string {
-    if (value === undefined) return "undefined";
-    if (value === null) return "null";
-    if (typeof value === "function") return value.toString();
-    try {
-      return JSON.stringify(value, null, 2);
-    } catch (error) {
-      return String(value);
     }
   }
 
