@@ -175,53 +175,42 @@ export class Cell {
         content: [{ text: `Executing code:\n${code}`, type: "text" }],
       });
 
-      // Wrap code execution in a try-catch to handle errors
-      let result: any;
-      let consoleOutput = "";
-
-      try {
-        consoleWrapper.capture(); // Start capturing console logs
-        result = eval(code); // Execute the code in the browser's environment
-        consoleOutput = consoleWrapper.getLogs(); // Get the captured logs
-      } catch (executionError: any) {
-        consoleOutput = `Execution error: ${executionError.message}`;
-      } finally {
-        consoleWrapper.restore(); // Restore the original console
+      // Target the iframe element by its ID
+      const iframeContainer = document.getElementById("outputIframe") as HTMLIFrameElement;
+      if (!iframeContainer) {
+        throw new Error("Output iframe not found. Please ensure the iframe exists in the HTML.");
       }
 
-      // Prepare the formatted output
-      let output = "";
-      if (consoleOutput) {
-        output += consoleOutput;
-      }
-      if (result !== undefined) {
-        if (output) output += "\n\n";
-        output += `Return value: ${this.formatOutput(result)}`;
+      // Use contentWindow.document to access the iframe's document
+      const iframeDocument = iframeContainer.contentWindow?.document;
+      if (!iframeDocument) {
+        throw new Error("Unable to access the iframe's document.");
       }
 
-      // Truncate output if necessary
-      let truncated = false;
-      if (output.length > 1000) {
-        output = output.slice(0, 1000) + "...";
-        truncated = true;
-      }
+      // Write the generated code into the iframe's document
+      iframeDocument.open();
+      iframeDocument.write(code);
+      iframeDocument.close();
 
-      // Add the execution result to the chat context as an assistant message
+      // Capture console logs
+      consoleWrapper.capture();
+      console.log("Web Design Assistant iframe content rendered successfully");
+      const consoleOutput = consoleWrapper.getLogs();
+
+      // Add a summary message in the chat context
       designAssistantInstance.addToChatContext({
         role: "assistant",
         content: [
           {
-            text: `Execution result:\n${output || "No output"}${
-              truncated ? "\n(Note: Output has been truncated to 1000 characters.)" : ""
-            }`,
+            text: `Execution result: The generated web design is displayed in the iframe.\nLogs:\n${consoleOutput}`,
             type: "text",
           },
         ],
       });
 
-      // Display the output in the cell
+      // Update the output element status
       if (this.outputElement) {
-        this.outputElement.textContent = output || "No output";
+        this.outputElement.textContent = `Generated content rendered successfully in the iframe. Check the console for logs.`;
       }
     } catch (error: any) {
       const errorMessage = `Error: ${error.message}`;
@@ -236,6 +225,8 @@ export class Cell {
       if (this.outputElement) {
         this.outputElement.textContent = errorMessage;
       }
+    } finally {
+      consoleWrapper.restore();
     }
   }
 
