@@ -156,7 +156,7 @@ Create an interactive physics sandbox with bouncing balls that includes gravity,
 ## Robot arm
 Create a 4-DOF (Degrees of Freedom) robotic arm simulator with interactive controls for base rotation, shoulder, elbow, and wrist joints. Show real-time end effector position coordinates and visualize the arm movement in 2D space.
 
-Create a 4-DOF (Degrees of Freedom) robotic arm simulator with interactive X,Y,Z endpoint controls. Use Inverse Kinematics to calculate the base rotation, shoulder, elbow, and wrist joints. Show real-time end effector position coordinates and visualize the arm movement in 3D space.
+Create a 4-DOF (Degrees of Freedom) robotic arm simulator with interactive X,Y,Z endpoint controls. Use Inverse Kinematics to calculate the base rotation, shoulder, elbow, and wrist joints. Show real-time end effector position coordinates and visualize the arm movement in 3D space. The base should rotate in the x-y plane and have a length of zero it should only be used to rotate the arm.
 
  ## For the Double Slit Experiment:
 

@@ -1,34 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Web Design Assistant</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" type="image/svg+xml" href="/fav.png" />
-    <script src="https://www.gstatic.com/charts/loader.js"></script>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <div class="header-left">
-                <svg class="notebook-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
-                </svg>
-                <h1>AI Web Design Assistant</h1>
-            </div>
-        </header>
-        <div class="main-content">
-            <div class="left-column">
-                <div id="notebook"></div>
-            </div>
-            <div class="right-column">
-                <div class="iframe-container">
-                    <iframe id="outputIframe" sandbox="allow-scripts allow-same-origin allow-modals"></iframe>
+    <head>
+        <meta charset="UTF-8">
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0"
+        >
+        <title>AI Web Design Assistant</title>
+        <link rel="stylesheet" href="styles.css">
+        <link rel="icon" type="image/svg+xml" href="/fav.png">
+        <script src="https://www.gstatic.com/charts/loader.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <div class="header-left">
+                    <svg
+                        class="notebook-icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
+                    </svg>
+                    <h1>AI Web Design Assistant</h1>
+                </div>
+            </header>
+            <div class="main-content">
+                <div class="left-column">
+                    <div id="chat"></div>
+                </div>
+                <div class="right-column">
+                    <div class="tab-header">
+                        <button
+                            id="codeTab"
+                            class="active"
+                        >
+                            Code Editor
+                        </button>
+                        <button id="viewTab">Preview</button>
+                    </div>
+                    <div class="tab-content">
+                        <div
+                            id="iframeContainer"
+                            class="iframe-container"
+                            style="display: none;"
+                        >
+                            <iframe
+                                id="outputIframe"
+                                sandbox="allow-scripts allow-same-origin allow-modals"
+                            ></iframe>
+                        </div>
+                        <div id="codeEditor"></div>
+                    </div>
                 </div>
             </div>
+            <div class="persistent-actions">
+                <button class="btn btn-blue execute-btn">Execute</button>
+            </div>
         </div>
-    </div>
-    <script type="module" src="/src/main.ts"></script>
-</body>
+        <script
+            type="module"
+            src="/src/main.ts"
+        ></script>
+    </body>
 </html>

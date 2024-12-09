@@ -20,5 +20,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src", ".local/notebook.ts", ".local/cell.ts", ".local/ResizeHandler.ts"]
 }
