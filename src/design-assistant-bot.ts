@@ -10,21 +10,19 @@ export class DesignAssistantBot {
   private modelId: string;
   private systemPrompt: string;
   private chatContext: Message[] = []; // Chat context to hold message history
-  private static MAX_MESSAGES = 10; // Max number of messages to retain in the context
+  private static MAX_MESSAGES = 6; // Max number of messages to retain in the context
 
   constructor(config: BedRockConfig) {
     this.bedrockService = new BedrockService(config);
     this.modelId = config.modelId; // AWS Bedrock model ID from Vite env.
     this.systemPrompt = `
-You are an AI-assisted web design assistant. Output all responses in JSON format with keys:
+You are an AI web design assistant. Output all responses in JSON format with keys:
 - "html" (The HTML code as a string),
 - "css" (The CSS code as a string),
 - "javascript" (The JavaScript code as a string),
 - "description" (A brief description of what the code does).
 
-Your primary goal is to generate structured outputs in a JSON format that follows this schema:
-
-JSON SCHEMA:
+Always output valid JSON with the following schema:
 {
   "html": string,
   "css": string,
@@ -32,22 +30,38 @@ JSON SCHEMA:
   "description": string
 }
 
-Example response:
+Requirements:
+- Output all responses in valid, parsable JSON.
+- Escape special characters properly.
+- Always include "html", "css", "javascript", and "description" keys.
+- Use HTML5, CSS3, and modern ES6+ JavaScript.
+- For module-based code (e.g., Three.js, React), insert it via a dynamically created <script type='module'> element.
+- For Three.js specifically, include ES module shims and an import map before the module script.
+- Keep responses concise and human-readable but inline (no multiline formatting).
+- No comments.
+- Your role is to assist with web design by generating JSON with working code and a brief description.
+
+When working with module-based libraries (like Three.js, etc.), ensure the following:
+ 1. Always wrap module code in a dynamically created script element with type='module'
+ 2. Use this pattern: const script = document.createElement('script'); script.type = 'module'; script.textContent = \`[your module code here]\`; document.body.appendChild(script);
+
+Example:
 {
-  "html": "<div id='container'>Hello, World!</div>",
+  "html": "<div id='container'>Hello</div>",
   "css": "#container { color: red; }",
-  "javascript": "document.getElementById('container').addEventListener('click', () => alert('Hello, World!'));",
-  "description": "This creates a red 'Hello, World!' div that displays an alert when clicked."
+  "javascript": "document.getElementById('container').addEventListener('click', () => alert('Clicked!'));",
+  "description": "Red text that shows an alert when clicked."
 }
 
-Remember:
-- The response must be parsable JSON, ensuring to escape special characters.
-- Use modern HTML5, CSS3, and JavaScript (ES6) features.
-- When possible, prioritize semantic HTML and responsive design principles.
-- Include meaningful IDs or classes for CSS and JavaScript targeting.
-
 Your output should always be consistent, concise, and adhere to the defined schema strictly. **Test each command thoroughly and ensure that your JSON output is properly formatted and free of errors.**
+If you want to examine a problem step by step use the json output response. For example:
 
+  {
+    "html": "<div></div>",
+    "css": "div { }",
+    "javascript": "",
+    "description": "Let me help you solve this step by step......"
+  }
 **Respond only with valid JSON.** Do not include any introductory or summary text.
     `;
   }
@@ -77,7 +91,7 @@ Your output should always be consistent, concise, and adhere to the defined sche
       system: this.systemPrompt,
       messages: this.chatContext, // Include the full chat context
       max_tokens: 20000,
-      temperature: 0.5,
+      temperature: 0.8,
     };
 
     try {
@@ -87,6 +101,8 @@ Your output should always be consistent, concise, and adhere to the defined sche
       if (!response || !response.content.length) {
         throw new Error("Invalid response from Bedrock model.");
       }
+
+      console.log("response", response);
 
       // Parse the response
       const parsedResponse = this.parseAssistantResponse(response.content[0].text);
@@ -99,6 +115,7 @@ Your output should always be consistent, concise, and adhere to the defined sche
 
       return parsedResponse;
     } catch (error) {
+      // add retry logic
       console.error("Error generating web design:", error);
       throw error;
     }
@@ -134,8 +151,12 @@ Your output should always be consistent, concise, and adhere to the defined sche
       throw new Error("Failed to parse assistant response as JSON: " + error.message);
     }
 
-    if (!parsedResponse.html || !parsedResponse.css || !parsedResponse.javascript || !parsedResponse.description) {
-      throw new Error('Response does not include required fields: "html", "css", "javascript", and "description".');
+    // if (!parsedResponse.html || !parsedResponse.css || !parsedResponse.javascript || !parsedResponse.description) {
+    //   throw new Error('Response does not include required fields: "html", "css", "javascript", and "description".');
+    // }
+
+        if ( !parsedResponse.description) {
+      throw new Error('Response does not include required fields:  "description".');
     }
 
     return parsedResponse;

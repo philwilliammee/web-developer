@@ -94,6 +94,14 @@ export class Cell {
     const executeButton = this.element.querySelector(".execute-btn") as HTMLButtonElement;
     executeButton.addEventListener("click", () => this.executeCode());
 
+    this.promptInput?.addEventListener("keydown", (event: KeyboardEvent) => {
+      if (event.key === "Enter" ) {
+        event.preventDefault();
+        this.generateCode();
+      }
+    }
+  )
+
     const form = this.element.querySelector(".prompt-form") as HTMLFormElement;
     if (form) {
       form.addEventListener("submit", (event: SubmitEvent) => {
@@ -109,8 +117,8 @@ export class Cell {
       this.setLoading(true);
       try {
         const { html, css, javascript, description } = await designAssistantInstance.generateWebDesign(prompt);
-
-        if (this.codeEditor) {
+        const hasWebDesign = html || css || javascript;
+        if (this.codeEditor && hasWebDesign) {
           const combinedCode = `<html>\n${html}\n<style>\n${css}\n</style>\n<script>\n${javascript}\n</script>`;
           this.codeEditor.setValue(combinedCode);
         }
@@ -142,7 +150,16 @@ export class Cell {
         throw new Error("Output iframe not found");
       }
 
-      const iframeDocument = iframeContainer.contentWindow?.document;
+      // Replace the iframe to reset its context
+      const newIframe = document.createElement("iframe");
+      newIframe.id = "outputIframe";
+      newIframe.sandbox.value = "allow-scripts allow-same-origin allow-modals";
+      newIframe.style.width = iframeContainer.style.width;
+      newIframe.style.height = iframeContainer.style.height;
+
+      iframeContainer.replaceWith(newIframe);
+
+      const iframeDocument = newIframe.contentWindow?.document;
       if (!iframeDocument) {
         throw new Error("Unable to access the iframe's document");
       }
@@ -162,6 +179,7 @@ export class Cell {
       consoleWrapper.restore();
     }
   }
+
 
   private appendToChatContext(role: "user" | "assistant", message: string): void {
     const messageElement = document.createElement("div");

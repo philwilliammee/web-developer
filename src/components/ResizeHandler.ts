@@ -3,7 +3,7 @@ export class ResizeHandler {
     private startHeight: number = 0;
     private isDragging: boolean = false;
     private editorWrapper: HTMLElement;
-    private chatSection: HTMLElement;
+    // private chatSection: HTMLElement;
     private handle: HTMLElement;
     private onResize: () => void;
 
@@ -14,7 +14,7 @@ export class ResizeHandler {
       onResize: () => void
     ) {
       this.editorWrapper = editorWrapper;
-      this.chatSection = chatSection;
+    //   this.chatSection = chatSection;
       this.handle = handle;
       this.onResize = onResize;
       this.setupEventListeners();

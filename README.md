@@ -141,3 +141,45 @@ console.log('Web Page Generated Successfully!');
 ```
 
 ---
+Use this data: Application Name: 2022GradWebSurvey.fmp12  Application Identifier: 2022GradWebSurvey.fmp12  Application Description: Post-grad survey (Web survey db)  Application URL:  Test URL:  Development URL:  Retired Date:  Has Integrations: No  In Scope Of SCL Audit: No  SOC Required: No  PCI Compliance: No  HIPAA Cornell Health Compliance: No  Contains High Risk Data: No  Contains Regulated Data: No  Athletics Compliance: No  Is SSIT Developed: No  Owner: Alumni Affairs & Development  SSIT Service Manager: Tony Salerno ( as22 )  Application Admins:  Daniel Longaker (dwl24) Emily Nestor Truckenbrod (ejn27) Application Business Analysis  Steven Kuhns (sk2784) Ben Heintz (bah235) Application Developers:  Lisa Jensen (lcp4) Application Owner Contacts:  Lisa Jensen (lcp4) to be shown a admin details page. Use modern design think Google, Nike, or Apple influenced styles. Display all information in a modern well thought out interface.
+
+
+## Bouncing balls
+Create an interactive physics sandbox with bouncing balls that includes gravity, elasticity, and air resistance controls. Include features like adding balls on click, toggling gravity, and displaying FPS.
+
+## Tetris
+
+## Snake Game
+
+
+
+## Robot arm
+Create a 4-DOF (Degrees of Freedom) robotic arm simulator with interactive controls for base rotation, shoulder, elbow, and wrist joints. Show real-time end effector position coordinates and visualize the arm movement in 2D space.
+
+Create a 4-DOF (Degrees of Freedom) robotic arm simulator with interactive X,Y,Z endpoint controls. Use Inverse Kinematics to calculate the base rotation, shoulder, elbow, and wrist joints. Show real-time end effector position coordinates and visualize the arm movement in 3D space.
+
+ ## For the Double Slit Experiment:
+
+ Create an interactive quantum mechanics simulator showing the double-slit experiment. Include controls for wavelength, slit separation, and the ability to switch between single and double slits. Display the resulting interference pattern
+
+## More
+
+Show me something interesting with electronics.
+
+A responsive bar chart created using Chart.js showing sample data with different colors for each bar and a y-axis starting at zero.
+
+A rotating 3D green cube rendered with Three.js, featuring directional lighting and responsive window resizing.
+
+A modern user profile card with avatar, stats, bio, and an interactive follow button. Features a gradient header, responsive design, and hover effects.
+
+create a snake game.
+
+A complete Tetris game featuring score tracking, levels, next piece preview, and both keyboard and touch controls. The error has been fixed by properly defining the nextPiece canvas element with width and height attributes.
+
+A sophisticated, interactive chart system using Chart.js with multiple features including: dynamic chart type switching (line, bar, radar, scatter), multiple color schemes, animated data updates, custom legend, ability to add/remove datasets, and responsive design. The Chart.js library is now properly included via CDN and the code is wrapped in a window load event listener.
+
+# @todo handle parsing errors with retries.
+
+# catch console errors show in chat and ask if send to bot
+
+# truncate long outputs
