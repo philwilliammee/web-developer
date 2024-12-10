@@ -111,10 +111,6 @@ console.log('Web Page Generated Successfully!');
 
 Create an interactive physics sandbox with bouncing balls that includes gravity, elasticity, and air resistance controls. Include features like adding balls on click, toggling gravity, and displaying FPS.
 
-### Tetris
-
-### Snake Game
-
 ### Robot arm
 
 Create a 4-DOF (Degrees of Freedom) robotic arm simulator with interactive controls for base rotation, shoulder, elbow, and wrist joints. Show real-time end effector position coordinates and visualize the arm movement in 2D space.
