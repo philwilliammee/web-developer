@@ -139,16 +139,13 @@ A sophisticated, interactive chart system using Chart.js with multiple features 
 
 A feature-rich sketch board interface with color picker, brush size control, eraser, clear canvas, and save functionality. Supports both mouse and touch inputs, with a responsive canvas and smooth drawing experience.
 
-# @todo handle parsing errors with retries.
+handles parsing errors with retries.
 
 # catch console errors show in chat and ask if send to bot
 
 # truncate long outputs
 
-
 ## Notes
 
-move expiremnets into production.
-Late Januarry cicking off.
 
 generate an invalid json response to test our auto error retry mechanism
