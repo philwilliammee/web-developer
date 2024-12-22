@@ -1,7 +1,7 @@
+import { ConverseResponse } from "@aws-sdk/client-bedrock-runtime";
 import {
-  BedRockConfig,
   BedrockService,
-  ClaudeRequestBody,
+  BedrockServiceConfig,
   Message,
 } from "./bedrock/bedrock.service";
 
@@ -10,11 +10,11 @@ export class DesignAssistantBot {
   private modelId: string;
   private systemPrompt: string;
   private chatContext: Message[] = []; // Chat context to hold message history
-  private static MAX_MESSAGES = 6; // Max number of messages to retain in the context
+  private static MAX_MESSAGES = 5; // this must always be odd so that user is always first.
 
-  constructor(config: BedRockConfig) {
+  constructor(config: BedrockServiceConfig) {
     this.bedrockService = new BedrockService(config);
-    this.modelId = config.modelId; // AWS Bedrock model ID from Vite env.
+    this.modelId = import.meta.env.VITE_BEDROCK_MODEL_ID
     this.systemPrompt = `
 You are an AI web design assistant. Output all responses in JSON format with keys:
 - "html" (The HTML code as a string),
@@ -62,7 +62,7 @@ If you want to examine a problem step by step use the json output response. For 
     "javascript": "",
     "description": "Let me help you solve this step by step......"
   }
-**Respond only with valid JSON.** Do not include any introductory or summary text.
+**Respond only with valid JSON.** Do not include any introductory or summary text, as these will be stripped out before processing.
     `;
   }
 
@@ -82,35 +82,38 @@ If you want to examine a problem step by step use the json output response. For 
     // Add the user message to the chat context
     this.addToChatContext({
       role: "user",
-      content: [{ text: userPrompt, type: "text" }],
+      content: [{ text: userPrompt}],
     });
 
     // Prepare the payload
-    const payload: ClaudeRequestBody = {
-      anthropic_version: "bedrock-2023-05-31",
-      system: this.systemPrompt,
-      messages: this.chatContext, // Include the full chat context
-      max_tokens: 20000,
-      temperature: 0.8,
-    };
+    // const payload = {
+    //   anthropic_version: "bedrock-2023-05-31",
+    //   system: this.systemPrompt,
+    //   messages: this.chatContext, // Include the full chat context
+    //   max_tokens: 20000,
+    //   temperature: 0.8,
+    // };
 
     try {
       // Send the request
-      const response = await this.bedrockService.invokeModel(this.modelId, payload);
+      const response: ConverseResponse = await this.bedrockService.converse(this.modelId, this.chatContext, this.systemPrompt);
 
-      if (!response || !response.content.length) {
+      const messageContext = response?.output?.message?.content
+      if (!messageContext?.length) {
         throw new Error("Invalid response from Bedrock model.");
       }
+
+      const text = messageContext[0].text || "error parsing response";
 
       console.log("response", response);
 
       // Parse the response
-      const parsedResponse = this.parseAssistantResponse(response.content[0].text);
+      const parsedResponse = this.parseAssistantResponse(text);
 
       // Add the assistant's message to the chat context
       this.addToChatContext({
         role: "assistant",
-        content: [{ text: response.content[0].text, type: "text" }],
+        content: [{ text: text}],
       });
 
       return parsedResponse;
@@ -166,7 +169,7 @@ If you want to examine a problem step by step use the json output response. For 
 // Initialize DesignAssistantBot with Vite environment variables
 export const designAssistantInstance = new DesignAssistantBot({
   region: import.meta.env.VITE_AWS_REGION,
-  modelId: import.meta.env.VITE_BEDROCK_MODEL_ID,
+  // modelId: import.meta.env.VITE_BEDROCK_MODEL_ID,
   credentials: {
     accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY,
     secretAccessKey: import.meta.env.VITE_AWS_SECRET_KEY,
