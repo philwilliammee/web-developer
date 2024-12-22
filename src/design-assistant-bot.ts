@@ -1,175 +1,178 @@
+// design-assistant-bot.ts
 import { ConverseResponse } from "@aws-sdk/client-bedrock-runtime";
 import {
   BedrockService,
   BedrockServiceConfig,
   Message,
 } from "./bedrock/bedrock.service";
+import { designAssistantSystemPrompt } from "./design-assistant.system";
+
+export interface WebDesignResponse {
+  html: string;
+  css: string;
+  javascript: string;
+  description: string;
+}
 
 export class DesignAssistantBot {
   private bedrockService: BedrockService;
   private modelId: string;
   private systemPrompt: string;
-  private chatContext: Message[] = []; // Chat context to hold message history
-  private static MAX_MESSAGES = 5; // this must always be odd so that user is always first.
+  private static MAX_RETRIES = 2;
+  private static MAX_MESSAGES = 5; // Must be odd so user is always first
 
   constructor(config: BedrockServiceConfig) {
     this.bedrockService = new BedrockService(config);
-    this.modelId = import.meta.env.VITE_BEDROCK_MODEL_ID
-    this.systemPrompt = `
-You are an AI web design assistant. Output all responses in JSON format with keys:
-- "html" (The HTML code as a string),
-- "css" (The CSS code as a string),
-- "javascript" (The JavaScript code as a string),
-- "description" (A brief description of what the code does).
-
-Always output valid JSON with the following schema:
-{
-  "html": string,
-  "css": string,
-  "javascript": string,
-  "description": string
-}
-
-Requirements:
-- Output all responses in valid, parsable JSON.
-- Escape special characters properly.
-- Always include "html", "css", "javascript", and "description" keys.
-- Use HTML5, CSS3, and modern ES6+ JavaScript.
-- For module-based code (e.g., Three.js, React), insert it via a dynamically created <script type='module'> element.
-- For Three.js specifically, include ES module shims and an import map before the module script.
-- Keep responses concise and human-readable but inline (no multiline formatting).
-- No comments.
-- Your role is to assist with web design by generating JSON with working code and a brief description.
-
-When working with module-based libraries (like Three.js, etc.), ensure the following:
- 1. Always wrap module code in a dynamically created script element with type='module'
- 2. Use this pattern: const script = document.createElement('script'); script.type = 'module'; script.textContent = \`[your module code here]\`; document.body.appendChild(script);
-
-Example:
-{
-  "html": "<div id='container'>Hello</div>",
-  "css": "#container { color: red; }",
-  "javascript": "document.getElementById('container').addEventListener('click', () => alert('Clicked!'));",
-  "description": "Red text that shows an alert when clicked."
-}
-
-Your output should always be consistent, concise, and adhere to the defined schema strictly. **Test each command thoroughly and ensure that your JSON output is properly formatted and free of errors.**
-If you want to examine a problem step by step use the json output response. For example:
-
-  {
-    "html": "<div></div>",
-    "css": "div { }",
-    "javascript": "",
-    "description": "Let me help you solve this step by step......"
-  }
-**Respond only with valid JSON.** Do not include any introductory or summary text, as these will be stripped out before processing.
-    `;
+    this.modelId = import.meta.env.VITE_BEDROCK_MODEL_ID;
+    this.systemPrompt = designAssistantSystemPrompt;
   }
 
   /**
-   * Generates code based on user input and stores chat history.
+   * Generates web design with retry mechanism and proper chat context
    */
-  async generateWebDesign(userPrompt: string): Promise<{
-    html: string;
-    css: string;
-    javascript: string;
-    description: string;
-  }> {
-    if (!userPrompt) {
-      throw new Error("Prompt cannot be empty.");
-    }
+  public async generateWebDesign(userPrompt: string): Promise<WebDesignResponse> {
+    const messages: Message[] = [
+      {
+        role: 'user',
+        content: [{ text: userPrompt }]
+      }
+    ];
 
-    // Add the user message to the chat context
-    this.addToChatContext({
-      role: "user",
-      content: [{ text: userPrompt}],
-    });
+    return this.executeWithRetry(messages);
+  }
 
-    // Prepare the payload
-    // const payload = {
-    //   anthropic_version: "bedrock-2023-05-31",
-    //   system: this.systemPrompt,
-    //   messages: this.chatContext, // Include the full chat context
-    //   max_tokens: 20000,
-    //   temperature: 0.8,
-    // };
+  /**
+   * Executes the design generation with retry logic
+   */
+  private async executeWithRetry(
+    messages: Message[],
+    retryCount = DesignAssistantBot.MAX_RETRIES
+  ): Promise<WebDesignResponse> {
+    console.log(`Attempt ${DesignAssistantBot.MAX_RETRIES - retryCount + 1} of ${DesignAssistantBot.MAX_RETRIES + 1}`);
+    console.log('Current message context:', JSON.stringify(messages, null, 2));
 
     try {
-      // Send the request
-      const response: ConverseResponse = await this.bedrockService.converse(this.modelId, this.chatContext, this.systemPrompt);
+      const response = await this.bedrockService.converse(
+        this.modelId,
+        messages,
+        this.systemPrompt
+      );
 
-      const messageContext = response?.output?.message?.content
-      if (!messageContext?.length) {
-        throw new Error("Invalid response from Bedrock model.");
+      const messageContent = response?.output?.message?.content || [];
+      const responseText = messageContent[0].text || '';
+      console.log('Raw AI response:', responseText);
+
+      try {
+        const parsedResponse = this.parseDesignResponse(responseText);
+        console.log('Successfully parsed response:', parsedResponse);
+
+        messages.push({
+          role: 'assistant',
+          content: [{ text: responseText }]
+        });
+
+        return parsedResponse;
+
+      } catch (parseError: any) {
+        console.warn('Parse error encountered:', {
+          error: parseError.message,
+          attemptsRemaining: retryCount,
+          responseText
+        });
+
+        if (retryCount > 0) {
+          console.log('Adding error response to conversation and retrying...');
+
+          messages.push({
+            role: 'assistant',
+            content: [{ text: responseText }]
+          });
+
+          messages.push({
+            role: 'user',
+            content: [{
+              text: `[AUTOMATIC ERROR RESPONSE]: Parse error - ${parseError.message}. Please provide a valid JSON response following this exact format: { "html": "", "css": "", "javascript": "", "description": "" }`
+            }]
+          });
+
+          return this.executeWithRetry(messages, retryCount - 1);
+        }
+        throw parseError;
       }
 
-      const text = messageContext[0].text || "error parsing response";
-
-      console.log("response", response);
-
-      // Parse the response
-      const parsedResponse = this.parseAssistantResponse(text);
-
-      // Add the assistant's message to the chat context
-      this.addToChatContext({
-        role: "assistant",
-        content: [{ text: text}],
+    } catch (error: any) {
+      console.error('Execution error:', {
+        errorType: error.name,
+        errorMessage: error.message,
+        attemptsRemaining: retryCount,
+        lastMessage: messages[messages.length - 1]
       });
 
-      return parsedResponse;
-    } catch (error) {
-      // add retry logic
-      console.error("Error generating web design:", error);
+      if (retryCount > 0 && error.name === 'ValidationException') {
+        console.log('Validation error - fixing message sequence and retrying...');
+
+        const lastMessage = messages[messages.length - 1];
+
+        if (lastMessage.role === 'user') {
+          console.log('Adding dummy assistant message to maintain alternation');
+          messages.push({
+            role: 'assistant',
+            content: [{ text: '[AUTOMATIC ERROR RESPONSE]: Invalid response detected' }]
+          });
+        }
+
+        messages.push({
+          role: 'user',
+          content: [{
+            text: `[AUTOMATIC ERROR RESPONSE]: Message sequence error. Please provide a valid JSON response following this exact format: { "html": "", "css": "", "javascript": "", "description": "" }`
+          }]
+        });
+
+        return this.executeWithRetry(messages, retryCount - 1);
+      }
+
       throw error;
     }
   }
 
   /**
-   * Adds a message to the chat context and truncates if necessary.
+   * Parses and validates the design response
    */
-  addToChatContext(message: Message): void {
-    this.chatContext.push(message);
+  private parseDesignResponse(responseText: string): WebDesignResponse {
+    console.log("Parsing design response:", responseText);
 
-    // Truncate the context to the maximum allowed size
-    if (this.chatContext.length > DesignAssistantBot.MAX_MESSAGES) {
-      this.chatContext = this.chatContext.slice(-DesignAssistantBot.MAX_MESSAGES);
+    try {
+      const parsedResponse = JSON.parse(responseText);
+
+      // Validate required fields
+      if (!parsedResponse.description) {
+        throw new Error('Response missing required description field');
+      }
+
+      // Ensure all fields exist with default values if missing
+      return {
+        html: parsedResponse.html || '',
+        css: parsedResponse.css || '',
+        javascript: parsedResponse.javascript || '',
+        description: parsedResponse.description
+      };
+
+    } catch (error: any) {
+      throw new Error(`Failed to parse design response: ${error.message}`);
     }
   }
 
   /**
-   * Parses the assistant's response to ensure it includes valid "html", "css", "javascript", and "description".
+   * Truncates message history to maintain proper context size
    */
-  private parseAssistantResponse(responseText: string): {
-    html: string;
-    css: string;
-    javascript: string;
-    description: string;
-  } {
-    console.log("Parsing assistant response:", responseText);
-
-    let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(responseText);
-    } catch (error: any) {
-      throw new Error("Failed to parse assistant response as JSON: " + error.message);
-    }
-
-    // if (!parsedResponse.html || !parsedResponse.css || !parsedResponse.javascript || !parsedResponse.description) {
-    //   throw new Error('Response does not include required fields: "html", "css", "javascript", and "description".');
-    // }
-
-        if ( !parsedResponse.description) {
-      throw new Error('Response does not include required fields:  "description".');
-    }
-
-    return parsedResponse;
+  private truncateMessages(messages: Message[]): Message[] {
+    return messages.slice(-DesignAssistantBot.MAX_MESSAGES);
   }
 }
 
-// Initialize DesignAssistantBot with Vite environment variables
+// Initialize singleton instance
 export const designAssistantInstance = new DesignAssistantBot({
   region: import.meta.env.VITE_AWS_REGION,
-  // modelId: import.meta.env.VITE_BEDROCK_MODEL_ID,
   credentials: {
     accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY,
     secretAccessKey: import.meta.env.VITE_AWS_SECRET_KEY,

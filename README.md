@@ -150,3 +150,5 @@ A feature-rich sketch board interface with color picker, brush size control, era
 
 move expiremnets into production.
 Late Januarry cicking off.
+
+generate an invalid json response to test our auto error retry mechanism

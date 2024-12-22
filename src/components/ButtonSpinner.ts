@@ -18,4 +18,9 @@ export class ButtonSpinner {
     public hide(): void {
       this.button.innerHTML = this.originalContent;
     }
+
+    destroy(): void {
+      this.hide();
+      // Any additional cleanup needed
+    }
   }
