@@ -123,24 +123,29 @@ Create a 4-DOF (Degrees of Freedom) robotic arm simulator with interactive X,Y,Z
 
 ## More
 
-Show me something interesting with electronics.
+Generate: something interesting with electronics.
 
-A responsive bar chart created using Chart.js showing sample data with different colors for each bar and a y-axis starting at zero.
+Generate: a responsive bar chart created using Chart.js showing sample data with different colors for each bar and a y-axis starting at zero.
 
-A rotating 3D green cube rendered with Three.js, featuring directional lighting and responsive window resizing.
+Generate: a rotating 3D textured cube rendered with Three.js, featuring ambient lighting and responsive window resizing.
 
-A modern user profile card with avatar, stats, bio, and an interactive follow button. Features a gradient header, responsive design, and hover effects.
+Generate: a modern user profile card with avatar, stats, bio, and an interactive follow button. Features a gradient header, responsive design, and hover effects.
 
-create a snake game.
+Generate: the iconic snake game.
 
-A complete Tetris game featuring score tracking, levels, next piece preview, and both keyboard and touch controls. The error has been fixed by properly defining the nextPiece canvas element with width and height attributes.
+Generate: a complete Tetris game featuring score tracking, levels, next piece preview, with keyboard controls.
 
-A sophisticated, interactive chart system using Chart.js with multiple features including: dynamic chart type switching (line, bar, radar, scatter), multiple color schemes, animated data updates, custom legend, ability to add/remove datasets, and responsive design. The Chart.js library is now properly included via CDN and the code is wrapped in a window load event listener.
+A sophisticated, interactive chart system using Chart.js with multiple features including: dynamic chart type switching (line, bar, radar, scatter), multiple color schemes, animated data updates, custom legend, ability to add/remove datasets, and responsive design.
 
 A feature-rich sketch board interface with color picker, brush size control, eraser, clear canvas, and save functionality. Supports both mouse and touch inputs, with a responsive canvas and smooth drawing experience.
 
-# @todo handle parsing errors with retries.
+handles parsing errors with retries.
 
 # catch console errors show in chat and ask if send to bot
 
 # truncate long outputs
+
+## Notes
+
+
+generate an invalid json response to test our auto error retry mechanism

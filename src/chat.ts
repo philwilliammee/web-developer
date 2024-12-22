@@ -1,14 +1,26 @@
+import { chatContext } from "./chat-context";
 import { ButtonSpinner } from "./components/ButtonSpinner";
 import { MonacoEditor } from "./components/MonacoEditor";
 import { designAssistantInstance } from "./design-assistant-bot";
+import { signal } from '@preact/signals-core';
+
+interface ChatMessage {
+  role: "user" | "assistant";
+  message: string;
+  timestamp: Date;
+}
 
 export class Chat {
   private container: HTMLElement | null;
   private chatMessages: HTMLElement;
   private promptInput: HTMLTextAreaElement | null;
   private buttonSpinner: ButtonSpinner | null = null;
-  private isGenerating: boolean = false;
   private codeEditor: MonacoEditor | null = null;
+
+  // Signals for state management
+  private isGenerating = signal<boolean>(false);
+  private messages = signal<ChatMessage[]>([]);
+  private error = signal<string | null>(null);
 
   public element: HTMLElement;
 
@@ -56,86 +68,141 @@ export class Chat {
     return chatElement;
   }
 
-  private setupEventListeners(): void {
-    const form = this.element.querySelector(".prompt-form") as HTMLFormElement;
-    if (form) {
-      form.addEventListener("submit", (event: SubmitEvent) => {
-        event.preventDefault();
-        this.generateCode();
-      });
-    }
+// chat.ts
+private async generateCodeWithRetry(retries = 1): Promise<void> {
+  const prompt = this.promptInput?.value.trim();
+  if (!prompt || this.isGenerating.value) return;
 
-    this.promptInput?.addEventListener("keydown", (event: KeyboardEvent) => {
-      if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        this.generateCode();
-      }
-    });
-  }
+  this.setLoading(true);
+  this.error.value = null;
 
-  private async generateCode(): Promise<void> {
-    const prompt = this.promptInput?.value.trim();
-    if (prompt && !this.isGenerating) {
-      this.setLoading(true);
+  // Add user message to context
+  chatContext.addUserMessage(prompt);
 
+  try {
+    for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        const { html, css, javascript, description } = await designAssistantInstance.generateWebDesign(prompt);
+        // Send just the prompt instead of messages
+        const response = await designAssistantInstance.generateWebDesign(prompt);
+        const { html, css, javascript, description } = response;
         const hasWebDesign = html || css || javascript;
 
-        // Update the code editor if there is content
+        // Add assistant response to context
+        chatContext.addAssistantMessage(
+          JSON.stringify({ html, css, javascript }),
+          description
+        );
+
         if (this.codeEditor && hasWebDesign) {
           const combinedCode = `<html>\n${html}\n<style>\n${css}\n</style>\n<script>\n${javascript}\n</script>`;
           this.codeEditor.setValue(combinedCode);
-
-          // Toggle to Code Editor tab
-          const codeTab = document.getElementById('codeTab') as HTMLElement;
-          const viewTab = document.getElementById('viewTab') as HTMLElement;
-          const codeEditorContainer = document.getElementById('codeEditor') as HTMLElement;
-          const iframeContainer = document.getElementById('iframeContainer') as HTMLElement;
-
-          if (codeTab && viewTab && codeEditorContainer && iframeContainer) {
-            codeTab.classList.add('active');
-            viewTab.classList.remove('active');
-            codeEditorContainer.style.display = 'block';
-            iframeContainer.style.display = 'none';
-
-            // Ensure the Monaco editor layout is updated
-            this.codeEditor.layout();
-          }
+          this.updateEditorView();
         }
 
-        this.appendToChatContext("user", prompt);
-        this.appendToChatContext("assistant", description);
+        // Update UI
+        this.addMessage("user", prompt);
+        this.addMessage("assistant", description);
 
-        // Clear the textarea input
         if (this.promptInput) {
           this.promptInput.value = "";
         }
-      } catch (error: any) {
-        this.appendToChatContext("assistant", `Error generating design: ${error.message}`);
-      } finally {
-        this.setLoading(false);
+        break;
+      } catch (error) {
+        if (attempt === retries) throw error;
+        const typedError = error as Error;
+        // Add error message to context as user message
+        const errorMessage = `Attempt ${attempt + 1} failed: ${typedError.message}. Retrying...`;
+        chatContext.addUserMessage(errorMessage);
+
+        this.addMessage("assistant", errorMessage);
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
+  } catch (error: any) {
+    this.error.value = error.message;
+    const errorMessage = `Error generating design: ${error.message}`;
+    chatContext.addUserMessage(errorMessage);
+    this.addMessage("assistant", errorMessage);
+  } finally {
+    this.setLoading(false);
+  }
+}
+
+  private addMessage(role: "user" | "assistant", message: string): void {
+    const newMessage: ChatMessage = {
+      role,
+      message,
+      timestamp: new Date()
+    };
+
+    this.messages.value = [...this.messages.value, newMessage];
+    this.appendMessageToDOM(newMessage);
   }
 
-  private appendToChatContext(role: "user" | "assistant", message: string): void {
+  private appendMessageToDOM(message: ChatMessage): void {
     const messageElement = document.createElement("div");
-    messageElement.className = `chat-message ${role}`;
-    messageElement.textContent = message;
+    messageElement.className = `chat-message ${message.role}`;
+    messageElement.textContent = message.message;
 
     this.chatMessages.appendChild(messageElement);
     this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
   }
 
+  private updateEditorView(): void {
+    const codeTab = document.getElementById('codeTab') as HTMLElement;
+    const viewTab = document.getElementById('viewTab') as HTMLElement;
+    const codeEditorContainer = document.getElementById('codeEditor') as HTMLElement;
+    const iframeContainer = document.getElementById('iframeContainer') as HTMLElement;
+
+    if (codeTab && viewTab && codeEditorContainer && iframeContainer) {
+      codeTab.classList.add('active');
+      viewTab.classList.remove('active');
+      codeEditorContainer.style.display = 'block';
+      iframeContainer.style.display = 'none';
+
+      this.codeEditor?.layout();
+    }
+  }
+
   private setLoading(loading: boolean): void {
-    this.isGenerating = loading;
+    this.isGenerating.value = loading;
 
     const generateButton = this.element.querySelector(".generate-btn") as HTMLButtonElement;
-
     generateButton.disabled = loading;
     this.promptInput && (this.promptInput.disabled = loading);
 
     loading ? this.buttonSpinner?.show() : this.buttonSpinner?.hide();
   }
+
+  private handleSubmit = (event: Event) => {
+    event.preventDefault();
+    this.generateCodeWithRetry();
+  };
+
+  private handleKeyDown = (event: Event) => {
+    const keyEvent = event as KeyboardEvent;
+    if (keyEvent.key === "Enter" && !keyEvent.shiftKey) {
+      event.preventDefault();
+      this.generateCodeWithRetry();
+    }
+  };
+
+  private setupEventListeners(): void {
+    const form = this.element.querySelector(".prompt-form") as HTMLFormElement;
+    if (form) {
+      form.addEventListener("submit", this.handleSubmit as EventListener);
+    }
+
+    this.promptInput?.addEventListener("keydown", this.handleKeyDown as EventListener);
+  }
+
+  public destroy(): void {
+    const form = this.element.querySelector(".prompt-form");
+    form?.removeEventListener("submit", this.handleSubmit as EventListener);
+    this.promptInput?.removeEventListener("keydown", this.handleKeyDown as EventListener);
+
+    this.buttonSpinner?.destroy?.();
+    this.element.remove();
+  }
+
 }

@@ -112,6 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Code executed successfully");
       const consoleOutput = consoleWrapper.getLogs();
 
+      // @todo do something with this information
       console.log("assistant", `Code executed successfully\n${consoleOutput}`);
 
       // Toggle to Preview tab after execution
