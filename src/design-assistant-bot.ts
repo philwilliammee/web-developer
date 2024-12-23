@@ -1,9 +1,8 @@
 // design-assistant-bot.ts
-import { ConverseResponse } from "@aws-sdk/client-bedrock-runtime";
+import { ConverseResponse, Message } from "@aws-sdk/client-bedrock-runtime";
 import {
   BedrockService,
   BedrockServiceConfig,
-  Message,
 } from "./bedrock/bedrock.service";
 import { designAssistantSystemPrompt } from "./design-assistant.system";
 
@@ -30,15 +29,19 @@ export class DesignAssistantBot {
   /**
    * Generates web design with retry mechanism and proper chat context
    */
-  public async generateWebDesign(userPrompt: string): Promise<WebDesignResponse> {
-    const messages: Message[] = [
-      {
-        role: 'user',
-        content: [{ text: userPrompt }]
-      }
-    ];
+  // public async generateWebDesign(userPrompt: string): Promise<WebDesignResponse> {
+  //   const messages: Message[] = [
+  //     {
+  //       role: 'user',
+  //       content: [{ text: userPrompt }]
+  //     }
+  //   ];
 
-    return this.executeWithRetry(messages);
+  //   return this.executeWithRetry(messages);
+  // }
+  public async generateWebDesign(messages: Message[]): Promise<WebDesignResponse> {
+    const truncatedMessages = this.truncateMessages(messages);
+    return this.executeWithRetry(truncatedMessages);
   }
 
   /**
@@ -161,6 +164,7 @@ export class DesignAssistantBot {
       throw new Error(`Failed to parse design response: ${error.message}`);
     }
   }
+
 
   /**
    * Truncates message history to maintain proper context size

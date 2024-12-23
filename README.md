@@ -149,3 +149,5 @@ handles parsing errors with retries.
 
 
 generate an invalid json response to test our auto error retry mechanism
+
+need to send full chatcontext to the web design assistant

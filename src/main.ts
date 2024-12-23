@@ -1,6 +1,8 @@
 import { Chat } from "./chat";
 import { MonacoEditor } from "./components/MonacoEditor";
 import { ConsoleWrapper } from "./console-wrapper";
+import { CsvUploader } from "./components/CsvUploader";
+import { CodeDownloader } from "./components/CodeDownloader";
 
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize Chat in the left column
@@ -13,15 +15,19 @@ document.addEventListener("DOMContentLoaded", () => {
   // Get elements for tabs and containers
   const viewTab = document.getElementById("viewTab");
   const codeTab = document.getElementById("codeTab");
-  const iframeContainer = document.getElementById(
-    "iframeContainer"
-  ) as HTMLElement;
-  const codeEditorContainer = document.getElementById(
-    "codeEditor"
-  ) as HTMLElement;
-  const executeButton = document.querySelector(
-    ".execute-btn"
-  ) as HTMLButtonElement;
+  const iframeContainer = document.getElementById("iframeContainer") as HTMLElement;
+  const codeEditorContainer = document.getElementById("codeEditor") as HTMLElement;
+  const executeButton = document.querySelector(".execute-btn") as HTMLButtonElement;
+
+  if (!viewTab || !codeTab || !iframeContainer || !codeEditorContainer || !executeButton) {
+    console.error("One or more required elements are missing.");
+    return;
+  }
+
+  // Create controls container
+  const controlsContainer = document.createElement('div');
+  controlsContainer.className = 'file-controls';
+  document.body.appendChild(controlsContainer);
 
   // Initialize MonacoEditor
   const initialCode = `
@@ -33,8 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
 </style>
 <script>
   console.log("Hello, World!");
-</script>
-        `;
+</script>`;
+
   const monacoEditor = new MonacoEditor(
     codeEditorContainer,
     initialCode,
@@ -42,18 +48,13 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Editor content updated:", value);
     }
   );
-  new Chat("chat", monacoEditor);
 
-  if (
-    !viewTab ||
-    !codeTab ||
-    !iframeContainer ||
-    !codeEditorContainer ||
-    !executeButton
-  ) {
-    console.error("One or more required elements are missing.");
-    return;
-  }
+  // Initialize CSV uploader and code downloader
+  const csvUploader = new CsvUploader(controlsContainer);
+  const codeDownloader = new CodeDownloader(controlsContainer, monacoEditor);
+
+    // Initialize Chat
+   const chat = new Chat("chat", {editor: monacoEditor, csvUploader, codeDownloader});
 
   // Function to toggle tabs
   function toggleTab(
@@ -66,9 +67,12 @@ document.addEventListener("DOMContentLoaded", () => {
     inactiveTab.classList.remove("active");
     showElement.style.display = "block";
     hideElement.style.display = "none";
+
+    // Toggle controls visibility based on active tab
+    // controlsContainer.style.display = activeTab === codeTab ? "flex" : "none";
   }
 
-  // Set the initial active tab to the code editor tab.
+  // Set the initial active tab to the code editor tab
   toggleTab(codeTab, viewTab, codeEditorContainer, iframeContainer);
 
   // Tab switching logic
@@ -78,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   codeTab.addEventListener("click", () => {
     toggleTab(codeTab, viewTab, codeEditorContainer, iframeContainer);
-    monacoEditor.layout(); // Ensure the editor layout is updated when shown
+    monacoEditor.layout();
   });
 
   // Execute button functionality
@@ -88,9 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const code = monacoEditor.getValue();
 
       // Replace the iframe to reset its context
-      const oldIframe = document.getElementById(
-        "outputIframe"
-      ) as HTMLIFrameElement;
+      const oldIframe = document.getElementById("outputIframe") as HTMLIFrameElement;
       const newIframe = document.createElement("iframe");
       newIframe.id = "outputIframe";
       newIframe.sandbox.value = "allow-scripts allow-same-origin allow-modals";
@@ -111,8 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
       consoleWrapper.capture();
       console.log("Code executed successfully");
       const consoleOutput = consoleWrapper.getLogs();
-
-      // @todo do something with this information
       console.log("assistant", `Code executed successfully\n${consoleOutput}`);
 
       // Toggle to Preview tab after execution

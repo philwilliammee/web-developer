@@ -2,6 +2,7 @@ import {
   BedrockRuntimeClient,
   ConverseCommand,
   ConverseResponse,
+  Message,
   SystemContentBlock,
   type ConverseCommandInput,
 } from "@aws-sdk/client-bedrock-runtime";
@@ -26,12 +27,7 @@ class BedrockService {
     const input: ConverseCommandInput = {
       modelId, // required
       system,
-      messages: messages.map((msg) => ({
-        role: msg.role,
-        content: msg.content.map((c) => ({
-          text: c.text,
-        })),
-      })),
+      messages,
       inferenceConfig: {
         temperature: 0.7,
         maxTokens: 8000
@@ -63,10 +59,10 @@ interface BedrockServiceConfig {
   };
 }
 
-interface Message {
-  role: "user" | "assistant";
-  content: ContentBlock[];
-}
+// interface Message {
+//   role: "user" | "assistant";
+//   content: ContentBlock[];
+// }
 
 interface ContentBlock {
   text: string;

@@ -8,6 +8,17 @@ interface ContentBlock {
 export class ChatContext {
   private messages: Message[] = [];
 
+    // Add event emitter
+    private messageChangeCallbacks: ((messages: Message[]) => void)[] = [];
+
+    onMessagesChange(callback: (messages: Message[]) => void) {
+      this.messageChangeCallbacks.push(callback);
+    }
+
+    private notifyMessageChange() {
+      this.messageChangeCallbacks.forEach(cb => cb(this.messages));
+    }
+
   addUserMessage(prompt: string) {
     if (this.messages.length > 0 && this.messages[this.messages.length - 1].role === 'user') {
       // Add content to existing user message
@@ -22,6 +33,7 @@ export class ChatContext {
         content: [{ text: prompt }]
       });
     }
+    this.notifyMessageChange();
   }
 
   addAssistantMessage(response: string, description: string) {
@@ -44,6 +56,7 @@ export class ChatContext {
         ]
       });
     }
+    this.notifyMessageChange();
   }
 
   getMessages(): Message[] {
