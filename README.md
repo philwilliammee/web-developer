@@ -151,3 +151,69 @@ handles parsing errors with retries.
 generate an invalid json response to test our auto error retry mechanism
 
 need to send full chatcontext to the web design assistant
+
+
+Here are a few good test prompts that would showcase different aspects of the data and different visualization capabilities:
+
+Interactive Dashboard Prompt:
+"Create an interactive dashboard showing sales performance across all dimensions. Include:
+1. A line chart showing daily sales trends
+2. A pie chart showing sales distribution by region
+3. A bar chart comparing product categories
+4. A gauge chart showing average customer satisfaction
+Make it interactive so users can hover for more details."
+
+Sales Analysis Prompt:
+"Generate a sales analysis visualization that shows the relationship between customer satisfaction and sales amount. Include:
+1. A scatter plot with sales_amount vs customer_satisfaction
+2. Color points by product_category
+3. Size the points by profit_margin
+4. Add tooltips showing product details on hover"
+
+Regional Performance Prompt:
+"Create a regional performance dashboard that shows:
+1. A map or grid of regions
+2. Color-code regions by total sales
+3. Show customer satisfaction averages
+4. Include small sparklines for each region's daily sales trend
+Make it visually appealing with a clean, modern design."
+
+Customer Insights Prompt:
+"Visualize customer behavior patterns:
+1. Group data by customer_type (New, Returning, Loyal)
+2. Show average purchase amounts
+3. Compare satisfaction scores
+4. Include promotion effectiveness
+Use animations for transitions and make it interactive."
+My recommendation would be to start with this comprehensive prompt:
+
+"Create an interactive sales dashboard with the following features:
+1. A main chart showing daily sales trends with toggles for different product categories
+2. A donut chart showing sales distribution by region
+3. Key metrics displayed as cards (total sales, avg satisfaction, total units)
+4. A bar chart comparing performance by customer type
+Add tooltips, hover effects, and make it responsive. Use a professional color scheme and ensure all numbers are properly formatted (e.g., sales as currency)."
+
+```csv
+date,region,product_category,product_name,sales_amount,units_sold,customer_satisfaction,in_stock,profit_margin,customer_age,customer_type,promotion_active
+2024-01-01,North,Electronics,Smart Watch Pro,299.99,12,4.8,true,0.35,28,New,false
+2024-01-01,South,Electronics,Wireless Earbuds,159.99,25,4.6,true,0.45,34,Returning,true
+2024-01-01,East,Home,Smart Speaker,129.99,18,4.7,true,0.38,45,Loyal,false
+2024-01-02,West,Electronics,4K Camera,899.99,5,4.9,false,0.28,39,New,false
+2024-01-02,North,Accessories,Phone Case,29.99,50,4.2,true,0.65,22,Returning,true
+2024-01-02,South,Home,Robot Vacuum,499.99,8,4.5,true,0.32,51,Loyal,false
+2024-01-03,East,Electronics,Gaming Console,499.99,15,4.8,true,0.25,19,New,true
+2024-01-03,West,Accessories,Charging Cable,19.99,75,4.0,true,0.70,29,Returning,false
+2024-01-03,North,Home,Smart Bulb Set,79.99,30,4.6,true,0.48,42,Loyal,true
+2024-01-04,South,Electronics,Tablet Pro,699.99,10,4.7,false,0.30,36,New,false
+2024-01-04,East,Accessories,Laptop Bag,49.99,22,4.3,true,0.55,31,Returning,true
+2024-01-04,West,Home,Security Camera,199.99,14,4.4,true,0.42,47,Loyal,false
+2024-01-05,North,Electronics,Smartwatch Basic,199.99,28,4.5,true,0.40,25,New,true
+2024-01-05,South,Accessories,Screen Protector,15.99,100,4.1,true,0.75,33,Returning,false
+2024-01-05,East,Home,Smart Thermostat,249.99,12,4.8,false,0.35,44,Loyal,true
+2024-01-06,West,Electronics,Bluetooth Speaker,89.99,35,4.6,true,0.50,27,New,true
+2024-01-06,North,Home,Video Doorbell,189.99,20,4.7,true,0.38,49,Returning,false
+2024-01-06,South,Electronics,Fitness Tracker,129.99,40,4.4,true,0.45,31,Loyal,true
+2024-01-07,East,Accessories,Power Bank,39.99,60,4.3,true,0.60,24,New,false
+2024-01-07,West,Home,Smart Lock,159.99,15,4.8,false,0.33,46,Returning,true
+```
