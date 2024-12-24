@@ -1,11 +1,14 @@
 import { Message } from "@aws-sdk/client-bedrock-runtime";
-import { chatContext } from "./chat-context";
-import { ButtonSpinner } from "./components/ButtonSpinner";
-import { MonacoEditor } from "./components/MonacoEditor";
-import { designAssistantInstance } from "./design-assistant-bot";
+import { chatContext } from "../../chat-context";
+import { ButtonSpinner } from "../ButtonSpinner";
+// import { MonacoEditor } from "./components/MonacoEditor";
+import { designAssistantInstance } from "../../design-assistant-bot";
 import { signal } from "@preact/signals-core";
-import { CodeDownloader } from "./components/CodeDownloader";
-import { CsvUploader } from "./components/CsvUploader";
+import { CodeDownloader } from "../CodeDownloader";
+import { CsvUploader } from "../CsvUploader";
+import { CodeEditorComponent } from "../CodeEditor/CodeEditorComponent";
+import { CSSManager } from "../../utils/css-manager";
+import { chatStyles } from "./chat.styles";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -14,7 +17,7 @@ interface ChatMessage {
 }
 
 interface ChatDependencies {
-  editor: MonacoEditor;
+  codeEditor: CodeEditorComponent;
   csvUploader: CsvUploader;
   codeDownloader: CodeDownloader;
 }
@@ -24,7 +27,8 @@ export class Chat {
   private chatMessages: HTMLElement;
   private promptInput: HTMLTextAreaElement | null;
   private buttonSpinner: ButtonSpinner | null = null;
-  private codeEditor: MonacoEditor | null = null;
+  // private codeEditor: MonacoEditor | null = null;
+  private codeEditor: CodeEditorComponent;
   private csvUploader: CsvUploader;
   private codeDownloader: CodeDownloader;
   private csvData: any[] | null = null;
@@ -37,12 +41,13 @@ export class Chat {
   public element: HTMLElement;
 
   constructor(containerId: string, dependencies: ChatDependencies) {
+    CSSManager.getInstance().addStyles('chat', chatStyles);
     this.container = document.getElementById(containerId);
     if (!this.container) {
       throw new Error(`Container with ID ${containerId} not found.`);
     }
 
-    this.codeEditor = dependencies.editor;
+    this.codeEditor = dependencies.codeEditor;
     this.csvUploader = dependencies.csvUploader;
     this.codeDownloader = dependencies.codeDownloader;
 
@@ -180,10 +185,14 @@ export class Chat {
           );
 
           if (this.codeEditor && hasWebDesign) {
-            // Use the new method to generate full HTML
             const fullCode = this.generateFullHtmlCode(html, css, javascript);
-            this.codeEditor.setValue(fullCode);
-            this.updateEditorView();
+            this.codeEditor.updateCode({
+              html,
+              css,
+              javascript,
+              combinedCode: fullCode,
+              data: this.csvData || []
+            });
           }
 
           if (this.promptInput) {
@@ -219,25 +228,25 @@ export class Chat {
     this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
   }
 
-  private updateEditorView(): void {
-    const codeTab = document.getElementById("codeTab") as HTMLElement;
-    const viewTab = document.getElementById("viewTab") as HTMLElement;
-    const codeEditorContainer = document.getElementById(
-      "codeEditor"
-    ) as HTMLElement;
-    const iframeContainer = document.getElementById(
-      "iframeContainer"
-    ) as HTMLElement;
+  // private updateEditorView(): void {
+  //   const codeTab = document.getElementById("codeTab") as HTMLElement;
+  //   const viewTab = document.getElementById("viewTab") as HTMLElement;
+  //   const codeEditorContainer = document.getElementById(
+  //     "codeEditor"
+  //   ) as HTMLElement;
+  //   const iframeContainer = document.getElementById(
+  //     "iframeContainer"
+  //   ) as HTMLElement;
 
-    if (codeTab && viewTab && codeEditorContainer && iframeContainer) {
-      codeTab.classList.add("active");
-      viewTab.classList.remove("active");
-      codeEditorContainer.style.display = "block";
-      iframeContainer.style.display = "none";
+  //   if (codeTab && viewTab && codeEditorContainer && iframeContainer) {
+  //     codeTab.classList.add("active");
+  //     viewTab.classList.remove("active");
+  //     codeEditorContainer.style.display = "block";
+  //     iframeContainer.style.display = "none";
 
-      this.codeEditor?.layout();
-    }
-  }
+  //     this.codeEditor?.layout();
+  //   }
+  // }
 
   private setLoading(loading: boolean): void {
     this.isGenerating.value = loading;
@@ -337,6 +346,7 @@ export class Chat {
   }
 
 public destroy(): void {
+  CSSManager.getInstance().removeStyles('chat');
   const form = this.element.querySelector(".prompt-form");
   if (form && this._formSubmitHandler) {
     form.removeEventListener("submit", this._formSubmitHandler);

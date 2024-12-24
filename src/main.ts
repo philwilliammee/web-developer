@@ -1,126 +1,15 @@
-import { Chat } from "./chat";
-import { MonacoEditor } from "./components/MonacoEditor";
-import { ConsoleWrapper } from "./console-wrapper";
-import { CsvUploader } from "./components/CsvUploader";
-import { CodeDownloader } from "./components/CodeDownloader";
+// main.ts
+import { MainApplication } from "./components/MainApplication/MainApplication";
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Initialize Chat in the left column
-  const chatContainer = document.getElementById("chat");
-  if (!chatContainer) {
-    console.error("Chat container with ID 'chat' not found.");
-    return;
+  try {
+    const app = new MainApplication();
+
+    // Optional: Store the instance for cleanup
+    window.addEventListener('unload', () => {
+      app.destroy();
+    });
+  } catch (error) {
+    console.error("Failed to initialize application:", error);
   }
-
-  // Get elements for tabs and containers
-  const viewTab = document.getElementById("viewTab");
-  const codeTab = document.getElementById("codeTab");
-  const iframeContainer = document.getElementById("iframeContainer") as HTMLElement;
-  const codeEditorContainer = document.getElementById("codeEditor") as HTMLElement;
-  const executeButton = document.querySelector(".execute-btn") as HTMLButtonElement;
-
-  if (!viewTab || !codeTab || !iframeContainer || !codeEditorContainer || !executeButton) {
-    console.error("One or more required elements are missing.");
-    return;
-  }
-
-  // Create controls container
-  const controlsContainer = document.createElement('div');
-  controlsContainer.className = 'file-controls';
-  document.body.appendChild(controlsContainer);
-
-  // Initialize MonacoEditor
-  const initialCode = `
-<h1>Hello, World!</h1>
-<style>
-  h1 {
-    color: red;
-  }
-</style>
-<script>
-  console.log("Hello, World!");
-</script>`;
-
-  const monacoEditor = new MonacoEditor(
-    codeEditorContainer,
-    initialCode,
-    (value: string) => {
-      console.log("Editor content updated:", value);
-    }
-  );
-
-  // Initialize CSV uploader and code downloader
-  const csvUploader = new CsvUploader(controlsContainer);
-  const codeDownloader = new CodeDownloader(controlsContainer, monacoEditor);
-
-    // Initialize Chat
-   const chat = new Chat("chat", {editor: monacoEditor, csvUploader, codeDownloader});
-
-  // Function to toggle tabs
-  function toggleTab(
-    activeTab: HTMLElement,
-    inactiveTab: HTMLElement,
-    showElement: HTMLElement,
-    hideElement: HTMLElement
-  ) {
-    activeTab.classList.add("active");
-    inactiveTab.classList.remove("active");
-    showElement.style.display = "block";
-    hideElement.style.display = "none";
-
-    // Toggle controls visibility based on active tab
-    // controlsContainer.style.display = activeTab === codeTab ? "flex" : "none";
-  }
-
-  // Set the initial active tab to the code editor tab
-  toggleTab(codeTab, viewTab, codeEditorContainer, iframeContainer);
-
-  // Tab switching logic
-  viewTab.addEventListener("click", () => {
-    toggleTab(viewTab, codeTab, iframeContainer, codeEditorContainer);
-  });
-
-  codeTab.addEventListener("click", () => {
-    toggleTab(codeTab, viewTab, codeEditorContainer, iframeContainer);
-    monacoEditor.layout();
-  });
-
-  // Execute button functionality
-  executeButton.addEventListener("click", async () => {
-    const consoleWrapper = new ConsoleWrapper();
-    try {
-      const code = monacoEditor.getValue();
-
-      // Replace the iframe to reset its context
-      const oldIframe = document.getElementById("outputIframe") as HTMLIFrameElement;
-      const newIframe = document.createElement("iframe");
-      newIframe.id = "outputIframe";
-      newIframe.sandbox.value = "allow-scripts allow-same-origin allow-modals";
-      newIframe.style.width = iframeContainer.style.width;
-      newIframe.style.height = iframeContainer.style.height;
-
-      oldIframe.parentElement?.replaceChild(newIframe, oldIframe);
-
-      const iframeDocument = newIframe.contentWindow?.document;
-      if (!iframeDocument) {
-        throw new Error("Unable to access the iframe's document");
-      }
-
-      iframeDocument.open();
-      iframeDocument.write(code);
-      iframeDocument.close();
-
-      consoleWrapper.capture();
-      console.log("Code executed successfully");
-      const consoleOutput = consoleWrapper.getLogs();
-      console.log("assistant", `Code executed successfully\n${consoleOutput}`);
-
-      // Toggle to Preview tab after execution
-      toggleTab(viewTab, codeTab, iframeContainer, codeEditorContainer);
-    } catch (error: any) {
-      console.log("assistant", `Error: ${error.message}`);
-    } finally {
-      consoleWrapper.restore();
-    }
-  });
 });

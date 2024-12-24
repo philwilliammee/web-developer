@@ -152,6 +152,8 @@ generate an invalid json response to test our auto error retry mechanism
 
 need to send full chatcontext to the web design assistant
 
+data loading
+
 
 Here are a few good test prompts that would showcase different aspects of the data and different visualization capabilities:
 
@@ -185,6 +187,7 @@ Customer Insights Prompt:
 3. Compare satisfaction scores
 4. Include promotion effectiveness
 Use animations for transitions and make it interactive."
+
 My recommendation would be to start with this comprehensive prompt:
 
 "Create an interactive sales dashboard with the following features:
@@ -207,7 +210,7 @@ date,region,product_category,product_name,sales_amount,units_sold,customer_satis
 2024-01-03,North,Home,Smart Bulb Set,79.99,30,4.6,true,0.48,42,Loyal,true
 2024-01-04,South,Electronics,Tablet Pro,699.99,10,4.7,false,0.30,36,New,false
 2024-01-04,East,Accessories,Laptop Bag,49.99,22,4.3,true,0.55,31,Returning,true
-2024-01-04,West,Home,Security Camera,199.99,14,4.4,true,0.42,47,Loyal,false
+2024-01-04,West,Home,Security Camera,199.99,14,4.4,true,0.42,47,Loyal,falsep
 2024-01-05,North,Electronics,Smartwatch Basic,199.99,28,4.5,true,0.40,25,New,true
 2024-01-05,South,Accessories,Screen Protector,15.99,100,4.1,true,0.75,33,Returning,false
 2024-01-05,East,Home,Smart Thermostat,249.99,12,4.8,false,0.35,44,Loyal,true
@@ -217,3 +220,12 @@ date,region,product_category,product_name,sales_amount,units_sold,customer_satis
 2024-01-07,East,Accessories,Power Bank,39.99,60,4.3,true,0.60,24,New,false
 2024-01-07,West,Home,Smart Lock,159.99,15,4.8,false,0.33,46,Returning,true
 ```
+
+@todo:
+better file names
+csv data add that as an extra message on the user not inline.
+reduce the assistant response data
+
+### RPG game prompt
+
+Generate an interactive RPG style game where I can do things like woodcutting and mining. There should be an experience and leveling system. It should be a 2D game where I can move around and interact with trees and rocks. Make it look super visually appealing and beautiful. I should be able to use WASD to move around and E to interact with things. The game should be a grid on a black background. Make sure I can see my current levels and experience. Use emojis for me, the rocks, and the trees inside the grid.
