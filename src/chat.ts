@@ -132,7 +132,7 @@ export class Chat {
     return chatElement;
   }
 
-  public updateDataContext(data: any[]) {
+  public updateDataContext(data: any[] | null) {
     this.csvData = data;
     console.log("Chat data context updated:", this.csvData);
   }

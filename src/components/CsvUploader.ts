@@ -1,49 +1,58 @@
 // CsvUploader.ts
 import { parseCSV } from "../utils/csvParser";
+import { fileControlsState } from "../file-controls/file-controls.state";
 
 interface CsvUploaderOptions {
-  onDataLoad?: (data: any[]) => void;
+  onDataLoad?: (data: any[] | null) => void
 }
-export class CsvUploader {
-  container: HTMLElement;
-  private dataPreview!: HTMLElement;
-  private options: CsvUploaderOptions;
 
+export class CsvUploader {
+  private container: HTMLElement;
+  private uploadSection!: HTMLElement;
+  private options: CsvUploaderOptions;
 
   constructor(container: HTMLElement, options: CsvUploaderOptions = {}) {
     this.container = container;
     this.options = options;
     this.createUploader();
-    this.createDataPreview();
-  }
-
-  setCallback(callback: CsvUploaderOptions['onDataLoad']) {
-    this.options.onDataLoad = callback;
   }
 
   private createUploader() {
-    const uploadSection = document.createElement("div");
-    uploadSection.className = "upload-section";
-    uploadSection.innerHTML = `
-      <label for="csvFile" class="file-label">Upload CSV</label>
-      <input type="file" id="csvFile" accept=".csv" class="file-input">
-    `;
+    this.uploadSection = document.createElement("div");
+    this.uploadSection.className = "upload-section";
+    this.updateButton();
 
-    this.container.appendChild(uploadSection);
+    this.container.appendChild(this.uploadSection);
     this.setupEventListeners();
   }
 
-  private createDataPreview() {
-    this.dataPreview = document.createElement("div");
-    this.dataPreview.id = "dataPreview";
-    document.body.appendChild(this.dataPreview);
+  private updateButton() {
+    const hasData = fileControlsState.hasCSVData.value;
+    this.uploadSection.innerHTML = `
+      <label for="csvFile" class="file-button ${hasData ? "clear" : "upload"}">
+        ${hasData ? fileControlsState.buttonIcons.clear : fileControlsState.buttonIcons.upload}
+        <span>${hasData ? "Clear CSV" : "Upload CSV"}</span>
+        ${!hasData ? '<input type="file" id="csvFile" accept=".csv" class="file-input">' : ""}
+      </label>
+    `;
   }
 
   private setupEventListeners() {
-    const fileInput = this.container.querySelector(
-      "#csvFile"
-    ) as HTMLInputElement;
-    fileInput?.addEventListener("change", this.handleFileUpload.bind(this));
+    if (fileControlsState.hasCSVData.value) {
+      const label = this.uploadSection.querySelector(".file-button");
+      label?.addEventListener("click", this.handleClearData.bind(this));
+    } else {
+      const fileInput = this.uploadSection.querySelector("#csvFile") as HTMLInputElement;
+      fileInput?.addEventListener("change", this.handleFileUpload.bind(this));
+    }
+  }
+
+  private handleClearData() {
+    (window as any).data = null;
+    fileControlsState.hasCSVData.value = false;
+    this.updateButton();
+    this.setupEventListeners();
+    this.options.onDataLoad?.(null);
   }
 
   private handleFileUpload(event: Event) {
@@ -60,17 +69,17 @@ export class CsvUploader {
         // Set window data
         (window as any).data = data;
 
-        // Update preview
-        this.dataPreview.textContent = JSON.stringify(data, null, 2);
-        this.dataPreview.style.display = 'block';
-
         // Call callback if provided
         this.options.onDataLoad?.(data);
 
-        console.log('CSV data loaded:', data);
+        fileControlsState.hasCSVData.value = true;
+        this.updateButton();
+        this.setupEventListeners();
+
+        console.log("CSV data loaded:", data);
       } catch (error) {
-        console.error('Error parsing CSV:', error);
-        alert('Error parsing CSV file');
+        console.error("Error parsing CSV:", error);
+        alert("Error parsing CSV file");
       }
     };
 
@@ -78,8 +87,19 @@ export class CsvUploader {
   }
 
   public destroy() {
-    const fileInput = this.container.querySelector("#csvFile");
-    fileInput?.removeEventListener("change", this.handleFileUpload.bind(this));
-    this.dataPreview.remove();
+    const clearButton = this.uploadSection.querySelector(".file-button");
+    const fileInput = this.uploadSection.querySelector("#csvFile");
+
+    if (fileControlsState.hasCSVData.value) {
+      clearButton?.removeEventListener("click", this.handleClearData);
+    } else {
+      fileInput?.removeEventListener("change", this.handleFileUpload);
+    }
+
+    this.uploadSection.remove();
+  }
+
+  public setCallback(callback: CsvUploaderOptions["onDataLoad"]) {
+    this.options.onDataLoad = callback;
   }
 }

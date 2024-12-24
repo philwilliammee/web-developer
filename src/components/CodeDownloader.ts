@@ -1,3 +1,5 @@
+import { fileControlsState } from "../file-controls/file-controls.state";
+
 export class CodeDownloader {
     private button!: HTMLButtonElement;
 
@@ -8,9 +10,11 @@ export class CodeDownloader {
 
     private createButton(container: HTMLElement) {
       this.button = document.createElement('button');
-      this.button.id = 'downloadBtn';
-      this.button.className = 'download-btn';
-      this.button.textContent = 'Download Code';
+      this.button.className = 'file-button download';
+      this.button.innerHTML = `
+        ${fileControlsState.buttonIcons.download}
+        <span>Download Code</span>
+      `;
       container.appendChild(this.button);
     }
 
