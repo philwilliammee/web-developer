@@ -147,14 +147,6 @@ handles parsing errors with retries.
 
 ## Notes
 
-
-generate an invalid json response to test our auto error retry mechanism
-
-need to send full chatcontext to the web design assistant
-
-data loading
-
-
 Here are a few good test prompts that would showcase different aspects of the data and different visualization capabilities:
 
 Interactive Dashboard Prompt:
@@ -225,7 +217,12 @@ date,region,product_category,product_name,sales_amount,units_sold,customer_satis
 
 Generate an interactive RPG style game where I can do things like woodcutting and mining. There should be an experience and leveling system. It should be a 2D game where I can move around and interact with trees and rocks. Make it look super visually appealing and beautiful. I should be able to use WASD to move around and E to interact with things. The game should be a grid on a black background. Make sure I can see my current levels and experience. Use emojis for me, the rocks, and the trees inside the grid.
 
-@todo:
+### test prompt
+
+generate an invalid json response to test our auto error retry mechanism
+
+### @todo
+
 better file names
 csv data add that as an extra message on the user not inline.
 reduce the assistant response data
