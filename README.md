@@ -147,12 +147,6 @@ handles parsing errors with retries.
 
 ## Notes
 
-
-generate an invalid json response to test our auto error retry mechanism
-
-need to send full chatcontext to the web design assistant
-
-
 Here are a few good test prompts that would showcase different aspects of the data and different visualization capabilities:
 
 Interactive Dashboard Prompt:
@@ -185,6 +179,7 @@ Customer Insights Prompt:
 3. Compare satisfaction scores
 4. Include promotion effectiveness
 Use animations for transitions and make it interactive."
+
 My recommendation would be to start with this comprehensive prompt:
 
 "Create an interactive sales dashboard with the following features:
@@ -217,3 +212,18 @@ date,region,product_category,product_name,sales_amount,units_sold,customer_satis
 2024-01-07,East,Accessories,Power Bank,39.99,60,4.3,true,0.60,24,New,false
 2024-01-07,West,Home,Smart Lock,159.99,15,4.8,false,0.33,46,Returning,true
 ```
+
+### RPG game prompt
+
+Generate an interactive RPG style game where I can do things like woodcutting and mining. There should be an experience and leveling system. It should be a 2D game where I can move around and interact with trees and rocks. Make it look super visually appealing and beautiful. I should be able to use WASD to move around and E to interact with things. The game should be a grid on a black background. Make sure I can see my current levels and experience. Use emojis for me, the rocks, and the trees inside the grid.
+
+### test prompt
+
+generate an invalid json response to test our auto error retry mechanism
+
+### @todo
+
+better file names
+csv data add that as an extra message on the user not inline.
+reduce the assistant response data
+css and js files are not properly syntax highlighted and autoformated in the editor.

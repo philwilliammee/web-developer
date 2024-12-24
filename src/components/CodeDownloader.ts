@@ -1,4 +1,4 @@
-import { fileControlsState } from "../file-controls/file-controls.state";
+import { fileControlsState } from "./FileControls/file-controls.state";
 
 export class CodeDownloader {
     private button!: HTMLButtonElement;

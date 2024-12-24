@@ -4,6 +4,7 @@ import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import HtmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
 
 export class MonacoEditor {
+
   private editor: monaco.editor.IStandaloneCodeEditor | null = null;
   private container: HTMLElement;
   private value: string;
@@ -98,6 +99,15 @@ export class MonacoEditor {
       this.editor.setValue(value);
     }
     this.value = value;
+  }
+
+  public show() {
+    this.container.style.display = 'block';
+    this.editor?.layout();
+  }
+
+  hide(): void {
+    this.container.style.display = "none";
   }
 
   public dispose() {

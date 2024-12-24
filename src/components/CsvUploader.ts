@@ -1,6 +1,7 @@
 // CsvUploader.ts
+import { dataStore } from "../stores/data.stores";
 import { parseCSV } from "../utils/csvParser";
-import { fileControlsState } from "../file-controls/file-controls.state";
+import { fileControlsState } from "./FileControls/file-controls.state";
 
 interface CsvUploaderOptions {
   onDataLoad?: (data: any[] | null) => void
@@ -48,7 +49,7 @@ export class CsvUploader {
   }
 
   private handleClearData() {
-    (window as any).data = null;
+    dataStore.clear();
     fileControlsState.hasCSVData.value = false;
     this.updateButton();
     this.setupEventListeners();
@@ -66,8 +67,8 @@ export class CsvUploader {
         const text = e.target?.result as string;
         const data = parseCSV(text);
 
-        // Set window data
-        (window as any).data = data;
+        // Update data store
+        dataStore.setData(data);
 
         // Call callback if provided
         this.options.onDataLoad?.(data);
