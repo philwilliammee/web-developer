@@ -89,7 +89,7 @@ npm run dev</code></pre>
 <ol>
   <li>Click the "Upload CSV" button in the interface</li>
   <li>Select your CSV file or use the provided example data</li>
-  <li>The data will be available as <code>window.data</code> in your generated code</li>
+  <li>The data structure will be passed to the AI attached to each user prompt</li>
 </ol>
 
 <h3>Data Visualization Examples</h3>
@@ -117,11 +117,11 @@ Use animations for transitions and make it interactive.</code></pre>
 3. Size points by profit_margin
 4. Add tooltips showing product details on hover
 Make it visually appealing with a clean, modern design.</code></pre>
-</ol>
 
+<h2>Creative Examples</h2>
+<p>Beyond data visualization, you can create interactive games, simulations, and 3D graphics:</p>
 
 <h3>Interactive Games</h3>
-
 <pre><code>Create a classic Snake game with:
 - WASD controls
 - Score tracking
@@ -129,7 +129,6 @@ Make it visually appealing with a clean, modern design.</code></pre>
 - Game over screen</code></pre>
 
 <h3>Physics Simulations</h3>
-
 <pre><code>Create a particle system with:
 - Gravity effects
 - Collision detection
@@ -137,13 +136,11 @@ Make it visually appealing with a clean, modern design.</code></pre>
 - Color transitions</code></pre>
 
 <h3>3D Graphics</h3>
-
 <pre><code>Generate a rotating 3D scene with:
 - Textured cube
 - Orbit controls
 - Ambient lighting
 - Responsive canvas</code></pre>
-
 
 <h2>Technical Architecture</h2>
 
@@ -195,5 +192,4 @@ Make it visually appealing with a clean, modern design.</code></pre>
   <li>[ ] Code snippet library</li>
   <li>[ ] Custom theme support</li>
   <li>[ ] Offline capability</li>
-  <li>[ ] In browser file storage and sqLite database</li>
 </ul>
