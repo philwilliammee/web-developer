@@ -1,14 +1,12 @@
 import { Message } from "@aws-sdk/client-bedrock-runtime";
 import { chatContext } from "../../chat-context";
-import { ButtonSpinner } from "../ButtonSpinner";
-// import { MonacoEditor } from "./components/MonacoEditor";
+import { ButtonSpinner } from "../ButtonSpinner/ButtonSpinner";
 import { designAssistantInstance } from "../../design-assistant-bot";
-import { signal } from "@preact/signals-core";
-import { CodeDownloader } from "../CodeDownloader";
-import { CsvUploader } from "../CsvUploader";
 import { CodeEditorComponent } from "../CodeEditor/CodeEditorComponent";
+import { CsvUploader } from "../CsvUploader";
 import { CSSManager } from "../../utils/css-manager";
 import { chatStyles } from "./chat.styles";
+import { dataStore } from "../../stores/AppStore";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -19,80 +17,161 @@ interface ChatMessage {
 interface ChatDependencies {
   codeEditor: CodeEditorComponent;
   csvUploader: CsvUploader;
-  codeDownloader: CodeDownloader;
 }
 
 export class Chat {
-  private container: HTMLElement | null;
-  private chatMessages: HTMLElement;
-  private promptInput: HTMLTextAreaElement | null;
-  private buttonSpinner: ButtonSpinner | null = null;
-  // private codeEditor: MonacoEditor | null = null;
   private codeEditor: CodeEditorComponent;
   private csvUploader: CsvUploader;
-  private codeDownloader: CodeDownloader;
-  private csvData: any[] | null = null;
+  private buttonSpinner?: ButtonSpinner;
 
-  // Signals for state management
-  private isGenerating = signal<boolean>(false);
-  // private messages = signal<ChatMessage[]>([]);
-  private error = signal<string | null>(null);
+  // DOM references
+  private _promptInput: HTMLTextAreaElement;
+  private _chatMessages: HTMLElement;
+  private _button!: HTMLButtonElement;
 
-  public element: HTMLElement;
-
-  constructor(containerId: string, dependencies: ChatDependencies) {
-    CSSManager.getInstance().addStyles('chat', chatStyles);
-    this.container = document.getElementById(containerId);
-    if (!this.container) {
-      throw new Error(`Container with ID ${containerId} not found.`);
-    }
+  constructor(dependencies: ChatDependencies) {
+    console.log("Initializing chat component");
 
     this.codeEditor = dependencies.codeEditor;
     this.csvUploader = dependencies.csvUploader;
-    this.codeDownloader = dependencies.codeDownloader;
 
-    // Set up the callback on the existing CSV uploader
+    // Get DOM elements
+    this._promptInput = document.querySelector(".prompt-input") as HTMLTextAreaElement;
+    this._chatMessages = document.querySelector(".chat-messages") as HTMLElement;
+
+    if (!this._promptInput || !this._chatMessages) {
+      throw new Error("Required chat elements not found in DOM");
+    }
+
+    CSSManager.getInstance().addStyles("chat", chatStyles);
+
     this.csvUploader.setCallback((data) => {
-      this.updateDataContext(data);
+      dataStore.setData(data);
     });
 
-    this.element = this.createElement();
-    this.container.appendChild(this.element);
-
-    this.chatMessages = this.element.querySelector(
-      ".chat-messages"
-    ) as HTMLElement;
-    this.promptInput = this.element.querySelector(
-      ".prompt-input"
-    ) as HTMLTextAreaElement;
-    const generateButton = this.element.querySelector(
-      ".generate-btn"
-    ) as HTMLButtonElement;
-
-    this.buttonSpinner = new ButtonSpinner(generateButton);
-
+    this.setupButtonSpinner();
     this.setupEventListeners();
 
-
-    // Listen for CSV data updates
-    window.addEventListener("csvDataLoaded", ((event: CustomEvent) => {
-      this.updateDataContext(event.detail.data);
-    }) as EventListener);
-
-    // Subscribe to chat context changes
+    // Set up chat context listener
     chatContext.onMessagesChange((messages) => {
       this.updateChatUI(messages);
     });
   }
 
-  private updateChatUI(messages: Message[]) {
-    // Clear existing messages
-    this.chatMessages.innerHTML = "";
 
-    // Add each message to DOM
+  private setupButtonSpinner(): void {
+    this.buttonSpinner = new ButtonSpinner();
+    this._button = this.buttonSpinner.getElement();
+  }
+
+  private setupEventListeners(): void {
+    this._button.addEventListener("click", this._handleGenerate);
+    this._promptInput.addEventListener("keydown", this._handleKeyDown);
+
+    console.log("Event listeners attached to:", {
+      button: this._button,
+      promptInput: this._promptInput
+    });
+  }
+
+  private readonly _handleGenerate = (e: MouseEvent): void => {
+    console.log("Generate handler called");
+    e.preventDefault();
+
+    if (!dataStore.isGenerating.value) {
+      this.generateCodeWithRetry();
+    }
+  };
+
+  private readonly _handleKeyDown = (e: KeyboardEvent): void => {
+    console.log("Keydown handler called", e.key);
+
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      this._handleGenerate(e as unknown as MouseEvent);
+    }
+  };
+
+  private async generateCodeWithRetry(retries = 1): Promise<void> {
+    const prompt = this._promptInput.value.trim();
+    console.log("Generating code with prompt:", prompt);
+
+    if (!prompt || dataStore.isGenerating.value) {
+      console.log("No prompt or already generating", {
+        hasPrompt: !!prompt,
+        isGenerating: dataStore.isGenerating.value,
+      });
+      return;
+    }
+
+    this.setLoading(true);
+    dataStore.setError(null);
+
+    try {
+      const data = dataStore.getData();
+      if (data) {
+        chatContext.addUserMessage(this.getDataStructureDescription());
+      }
+
+      chatContext.addUserMessage(prompt);
+
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+          const messages = chatContext.getTruncatedHistory();
+          const response = await designAssistantInstance.generateWebDesign(messages);
+          const { html, css, javascript, description } = response;
+
+          if (html || css || javascript) {
+            chatContext.addAssistantMessage(
+              JSON.stringify({ html, css, javascript }),
+              description
+            );
+
+            const fullCode = this.generateFullHtmlCode(html, css, javascript);
+            dataStore.setCodeContent({ html, css, javascript, combinedCode: fullCode });
+
+            this.codeEditor.updateCode({
+              html,
+              css,
+              javascript,
+              combinedCode: fullCode,
+              data: dataStore.getData() || [],
+            });
+
+            this._promptInput.value = "";
+            break;
+          }
+        } catch (error: any) {
+          if (attempt === retries) throw error;
+          chatContext.addAssistantMessage(`Attempt ${attempt + 1} failed: ${error.message}. Retrying...`, "Error");
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+    } catch (error: any) {
+      dataStore.setError(error.message);
+      chatContext.addAssistantMessage(`Error generating design: ${error.message}`, "Error");
+    } finally {
+      this.setLoading(false);
+    }
+  }
+
+  private getDataStructureDescription(): string {
+    const data = dataStore.getData();
+    if (!data?.length) return "";
+
+    const sampleData = data[0];
+    const structure = Object.entries(sampleData)
+      .map(([key, value]) => `${key}: ${typeof value}`)
+      .join(", ");
+
+    return `\nAvailable data structure: { ${structure} }.\nData has ${data.length} records.`;
+  }
+
+  private updateChatUI(messages: Message[]): void {
+    this._chatMessages.innerHTML = "";
+
     messages.forEach((message) => {
       if (message.role === "user") {
-        // For user messages, show all content
         message.content?.forEach((content) => {
           this.appendMessageToDOM({
             role: message.role || "user",
@@ -101,8 +180,7 @@ export class Chat {
           });
         });
       } else {
-        // For assistant messages, only show the description (second content item)
-        const description = message.content?.[1]?.text; // Safe access with optional chaining
+        const description = message.content?.[1]?.text;
         if (description) {
           this.appendMessageToDOM({
             role: message.role || "assistant",
@@ -114,207 +192,30 @@ export class Chat {
     });
   }
 
-  private createElement(): HTMLElement {
-    const chatElement = document.createElement("div");
-    chatElement.className = "chat";
-
-    chatElement.innerHTML = `
-      <div class="chat-section">
-        <div class="chat-messages"></div>
-        <form class="prompt-form">
-          <textarea class="prompt-input" placeholder="Enter your prompt..." rows="5" cols="33"></textarea>
-          <div class="prompt-actions">
-            <button type="submit" class="btn btn-green generate-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="21 12 9 18 9 6 21 12"></polygon>
-              </svg>
-            </button>
-          </div>
-        </form>
-      </div>
-    `;
-
-    return chatElement;
-  }
-
-  public updateDataContext(data: any[] | null) {
-    this.csvData = data;
-    console.log("Chat data context updated:", this.csvData);
-  }
-
-  private getDataStructureDescription(): string {
-    if (!this.csvData || this.csvData.length === 0) return "";
-
-    const sampleData = this.csvData[0];
-    const structure = Object.entries(sampleData)
-      .map(([key, value]) => `${key}: ${typeof value}`)
-      .join(", ");
-
-    return `\nAvailable data structure: { ${structure} }.\nData has ${this.csvData.length} records.`;
-  }
-
-  private async generateCodeWithRetry(retries = 1): Promise<void> {
-    const prompt = this.promptInput?.value.trim();
-    if (!prompt || this.isGenerating.value) return;
-
-    // Add data context to prompt if available
-    const fullPrompt = this.csvData
-      ? `${prompt}\n\nNote: You have access to window.data which contains: ${this.getDataStructureDescription()}\nUse 'window.data' to access this data in your JavaScript code.`
-      : prompt;
-
-    this.setLoading(true);
-    this.error.value = null;
-
-    // Add user message to context
-    chatContext.addUserMessage(fullPrompt);
-
-    try {
-      for (let attempt = 0; attempt <= retries; attempt++) {
-        try {
-          const messages = chatContext.getTruncatedHistory();
-          const response = await designAssistantInstance.generateWebDesign(
-            messages
-          );
-
-          const { html, css, javascript, description } = response;
-          const hasWebDesign = html || css || javascript;
-
-          chatContext.addAssistantMessage(
-            JSON.stringify({ html, css, javascript }),
-            description
-          );
-
-          if (this.codeEditor && hasWebDesign) {
-            const fullCode = this.generateFullHtmlCode(html, css, javascript);
-            this.codeEditor.updateCode({
-              html,
-              css,
-              javascript,
-              combinedCode: fullCode,
-              data: this.csvData || []
-            });
-          }
-
-          if (this.promptInput) {
-            this.promptInput.value = "";
-          }
-          break;
-        } catch (error: any) {
-          if (attempt === retries) throw error;
-          const errorMessage = `Attempt ${attempt + 1} failed: ${
-            error.message
-          }. Retrying...`;
-          chatContext.addAssistantMessage(errorMessage, "Error");
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      }
-    } catch (error: any) {
-      this.error.value = error.message;
-      chatContext.addAssistantMessage(
-        `Error generating design: ${error.message}`,
-        "Error"
-      );
-    } finally {
-      this.setLoading(false);
-    }
-  }
-
   private appendMessageToDOM(message: ChatMessage): void {
     const messageElement = document.createElement("div");
     messageElement.className = `chat-message ${message.role}`;
     messageElement.textContent = message.message;
 
-    this.chatMessages.appendChild(messageElement);
-    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    this._chatMessages.appendChild(messageElement);
+    this._chatMessages.scrollTop = this._chatMessages.scrollHeight;
   }
-
-  // private updateEditorView(): void {
-  //   const codeTab = document.getElementById("codeTab") as HTMLElement;
-  //   const viewTab = document.getElementById("viewTab") as HTMLElement;
-  //   const codeEditorContainer = document.getElementById(
-  //     "codeEditor"
-  //   ) as HTMLElement;
-  //   const iframeContainer = document.getElementById(
-  //     "iframeContainer"
-  //   ) as HTMLElement;
-
-  //   if (codeTab && viewTab && codeEditorContainer && iframeContainer) {
-  //     codeTab.classList.add("active");
-  //     viewTab.classList.remove("active");
-  //     codeEditorContainer.style.display = "block";
-  //     iframeContainer.style.display = "none";
-
-  //     this.codeEditor?.layout();
-  //   }
-  // }
 
   private setLoading(loading: boolean): void {
-    this.isGenerating.value = loading;
-
-    const generateButton = this.element.querySelector(
-      ".generate-btn"
-    ) as HTMLButtonElement;
-    generateButton.disabled = loading;
-    this.promptInput && (this.promptInput.disabled = loading);
-
-    loading ? this.buttonSpinner?.show() : this.buttonSpinner?.hide();
-  }
-
-  // private handleSubmit = (event: Event) => {
-  //   event.preventDefault();
-  //   this.generateCodeWithRetry();
-  // };
-
-  // private handleKeyDown = (event: Event) => {
-  //   const keyEvent = event as KeyboardEvent;
-  //   if (keyEvent.key === "Enter" && !keyEvent.shiftKey) {
-  //     event.preventDefault();
-  //     this.generateCodeWithRetry();
-  //   }
-  // };
-
-  private setupEventListeners(): void {
-    const form = this.element.querySelector(".prompt-form") as HTMLFormElement;
-    if (form) {
-      // Use explicit function to handle form submission
-      const formSubmitHandler = (e: Event) => {
-        e.preventDefault();
-        this.generateCodeWithRetry();
-      };
-
-      form.addEventListener("submit", formSubmitHandler);
-
-      // Store the handler for cleanup
-      this._formSubmitHandler = formSubmitHandler;
+    dataStore.setGenerating(loading);
+    this._promptInput.disabled = loading;
+    if (this.buttonSpinner) {
+      loading ? this.buttonSpinner.show() : this.buttonSpinner.hide();
     }
-
-    const keyDownHandler = (e: KeyboardEvent) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        this.generateCodeWithRetry();
-      }
-    };
-
-    this.promptInput?.addEventListener("keydown", keyDownHandler);
-    // Store the handler for cleanup
-    this._keyDownHandler = keyDownHandler;
   }
 
-  // Add class properties for event handlers
-  private _formSubmitHandler?: (e: Event) => void;
-  private _keyDownHandler?: (e: KeyboardEvent) => void;
-
-  private generateFullHtmlCode(
-    html: string,
-    css: string,
-    javascript: string
-  ): string {
-    return `<!DOCTYPE html>
+  private generateFullHtmlCode(html: string, css: string, javascript: string): string {
+    const data = dataStore.getData();
+    return /*html*/ `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Pre-loaded libraries -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -331,9 +232,8 @@ export class Chat {
   <script>
     (function() {
       try {
-        // Make data available to visualization
-        window.data = ${this.csvData ? JSON.stringify(this.csvData) : "[]"};
-        // Your visualization code
+        const data = ${data ? JSON.stringify(data) : "[]"};
+        window.data = data;
         ${javascript}
       } catch (error) {
         console.error('Error in visualization:', error);
@@ -345,23 +245,29 @@ export class Chat {
 </html>`;
   }
 
-public destroy(): void {
-  CSSManager.getInstance().removeStyles('chat');
-  const form = this.element.querySelector(".prompt-form");
-  if (form && this._formSubmitHandler) {
-    form.removeEventListener("submit", this._formSubmitHandler);
+  protected cleanup(): void {
+    console.log("Cleaning up chat component");
+
+    this._button.removeEventListener("click", this._handleGenerate);
+    this._promptInput.removeEventListener("keydown", this._handleKeyDown);
+
+    if (this.buttonSpinner) {
+      this.buttonSpinner.destroy();
+    }
+
+    CSSManager.getInstance().removeStyles("chat");
   }
 
-  if (this.promptInput && this._keyDownHandler) {
-    this.promptInput.removeEventListener("keydown", this._keyDownHandler);
+  public destroy(): void {
+    console.log("Cleaning up chat component");
+
+    this._button.removeEventListener("click", this._handleGenerate);
+    this._promptInput.removeEventListener("keydown", this._handleKeyDown);
+
+    if (this.buttonSpinner) {
+      this.buttonSpinner.destroy();
+    }
+
+    CSSManager.getInstance().removeStyles("chat");
   }
-
-  this.buttonSpinner?.destroy?.();
-  this.element.remove();
-
-  // Remove event listener
-  window.removeEventListener("csvDataLoaded", ((event: CustomEvent) => {
-    this.updateDataContext(event.detail.data);
-  }) as EventListener);
-}
 }

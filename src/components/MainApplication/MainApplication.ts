@@ -70,10 +70,14 @@ export class MainApplication {
     this.consoleWrapper = new ConsoleWrapper();
 
     // Initialize Chat
-    this.chat = new Chat("chat", {
+    const chatContainer = document.getElementById("chat");
+    if (!chatContainer) {
+      throw new Error("Chat container not found");
+    }
+
+    this.chat = new Chat({
       codeEditor: this.codeEditor,
-      csvUploader: this.csvUploader,
-      codeDownloader: this.codeDownloader,
+      csvUploader: this.csvUploader
     });
   }
 

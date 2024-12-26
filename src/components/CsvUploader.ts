@@ -1,5 +1,5 @@
 // CsvUploader.ts
-import { dataStore } from "../stores/data.stores";
+import { dataStore } from "../stores/AppStore";
 import { parseCSV } from "../utils/csvParser";
 import { fileControlsState } from "./FileControls/file-controls.state";
 

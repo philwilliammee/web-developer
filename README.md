@@ -192,4 +192,70 @@ Make it visually appealing with a clean, modern design.</code></pre>
   <li>[ ] Code snippet library</li>
   <li>[ ] Custom theme support</li>
   <li>[ ] Offline capability</li>
+  <li>[ ] Pass the rendered html back to the AI model for feedback</li>
 </ul>
+
+
+
+Branch: feature/base-component
+bash
+Copy code
+git checkout -b feature/base-component
+Create base Component class
+Convert one component (like Chat) to use it
+Test functionality
+Create PR for review
+Branch: feature/centralized-store
+bash
+Copy code
+git checkout -b feature/centralized-store
+Create AppStore
+Move existing signals to store
+Update components to use store
+Test state management
+Create PR for review
+Branch: feature/event-bus
+bash
+Copy code
+git checkout -b feature/event-bus
+Implement EventBus
+Replace direct component communication
+Test event handling
+Create PR for review
+Branch: feature/error-handling
+bash
+Copy code
+git checkout -b feature/error-handling
+Implement ErrorHandler
+Standardize error handling across components
+Test error scenarios
+Create PR for review
+Branch: feature/signal-consistency
+bash
+Copy code
+git checkout -b feature/signal-consistency
+Update remaining components to use signals
+Remove direct DOM updates where possible
+Test reactivity
+Create PR for review
+
+
+More examples:
+show me something interesting about this data.
+> Interactive weather dashboard showing temperature and humidity trends over time with key statistics including average temperature, maximum wind speed, and humidity range
+
+Available data structure: { time: string, temperature_2m: number, relative_humidity_2m: number, wind_speed_10m: number }. Data has 168 records.
+also chart wind speed
+
+> Comprehensive weather dashboard featuring a multi-axis line chart showing temperature, humidity, and wind speed trends over time, along with statistical cards displaying averages and ranges for each metric
+
+Available data structure: { time: string, temperature_2m: number, relative_humidity_2m: number, wind_speed_10m: number }. Data has 168 records.
+can we make some correlation between the temperature and the windspeed and humidity?
+
+> Correlation analysis dashboard showing scatter plots of temperature vs wind speed and temperature vs humidity, with calculated correlation coefficients and interpretation of correlation strength
+
+Available data structure: { time: string, temperature_2m: number, relative_humidity_2m: number, wind_speed_10m: number }. Data has 168 records.
+What insights does this give us? Correlation Analysis Temperature-Wind Correlation: -0.427 Moderate negative correlation
+
+> Temperature-Humidity Correlation: 0.406 Moderate positive correlation
+Comprehensive analysis of weather patterns showing relationships between temperature, wind speed, and humidity, with detailed insights about correlations and their practical implications

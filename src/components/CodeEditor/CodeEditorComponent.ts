@@ -2,7 +2,7 @@
 import { MonacoEditor } from "./MonacoEditor";
 import { codeEditorStyles } from "./codeEditor.styles";
 import { CSSManager } from "../../utils/css-manager";
-import { dataStore } from "../../stores/data.stores";
+import { dataStore } from "../../stores/AppStore";
 
 export interface CodeEditorState {
   html: string;
