@@ -1,106 +1,85 @@
-// CsvUploader.ts
+// src/components/CsvUploader.ts
 import { dataStore } from "../stores/AppStore";
 import { parseCSV } from "../utils/csvParser";
-import { fileControlsState } from "./FileControls/file-controls.state";
-
-interface CsvUploaderOptions {
-  onDataLoad?: (data: any[] | null) => void
-}
+import { signal } from "@preact/signals-core";
 
 export class CsvUploader {
-  private container: HTMLElement;
-  private uploadSection!: HTMLElement;
-  private options: CsvUploaderOptions;
+    private fileInput: HTMLInputElement;
+    private uploadButton: HTMLLabelElement;
+    private uploadIcon: HTMLElement;
+    private clearIcon: HTMLElement;
+    private buttonText: HTMLElement;
+    private hasData = signal<boolean>(false);
 
-  constructor(container: HTMLElement, options: CsvUploaderOptions = {}) {
-    this.container = container;
-    this.options = options;
-    this.createUploader();
-  }
+    constructor() {
+        // Get DOM elements
+        this.fileInput = document.querySelector('#csvFile') as HTMLInputElement;
+        this.uploadButton = document.querySelector('.file-button.upload') as HTMLLabelElement;
+        this.uploadIcon = document.querySelector('.upload-icon') as HTMLElement;
+        this.clearIcon = document.querySelector('.clear-icon') as HTMLElement;
+        this.buttonText = document.querySelector('.file-button.upload .button-text') as HTMLElement;
 
-  private createUploader() {
-    this.uploadSection = document.createElement("div");
-    this.uploadSection.className = "upload-section";
-    this.updateButton();
+        if (!this.fileInput || !this.uploadButton || !this.uploadIcon ||
+            !this.clearIcon || !this.buttonText) {
+            throw new Error('Required CSV uploader elements not found');
+        }
 
-    this.container.appendChild(this.uploadSection);
-    this.setupEventListeners();
-  }
-
-  private updateButton() {
-    const hasData = fileControlsState.hasCSVData.value;
-    this.uploadSection.innerHTML = `
-      <label for="csvFile" class="file-button ${hasData ? "clear" : "upload"}">
-        ${hasData ? fileControlsState.buttonIcons.clear : fileControlsState.buttonIcons.upload}
-        <span>${hasData ? "Clear CSV" : "Upload CSV"}</span>
-        ${!hasData ? '<input type="file" id="csvFile" accept=".csv" class="file-input">' : ""}
-      </label>
-    `;
-  }
-
-  private setupEventListeners() {
-    if (fileControlsState.hasCSVData.value) {
-      const label = this.uploadSection.querySelector(".file-button");
-      label?.addEventListener("click", this.handleClearData.bind(this));
-    } else {
-      const fileInput = this.uploadSection.querySelector("#csvFile") as HTMLInputElement;
-      fileInput?.addEventListener("change", this.handleFileUpload.bind(this));
-    }
-  }
-
-  private handleClearData() {
-    dataStore.clear();
-    fileControlsState.hasCSVData.value = false;
-    this.updateButton();
-    this.setupEventListeners();
-    this.options.onDataLoad?.(null);
-  }
-
-  private handleFileUpload(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const text = e.target?.result as string;
-        const data = parseCSV(text);
-
-        // Update data store
-        dataStore.setData(data);
-
-        // Call callback if provided
-        this.options.onDataLoad?.(data);
-
-        fileControlsState.hasCSVData.value = true;
-        this.updateButton();
         this.setupEventListeners();
+    }
 
-        console.log("CSV data loaded:", data);
-      } catch (error) {
-        console.error("Error parsing CSV:", error);
-        alert("Error parsing CSV file");
-      }
+    private setupEventListeners(): void {
+        this.fileInput.addEventListener('change', this.handleFileUpload);
+        this.uploadButton.addEventListener('click', this.handleButtonClick);
+    }
+
+    private handleButtonClick = (e: MouseEvent) => {
+        if (this.hasData.value) {
+            e.preventDefault();
+            this.handleClearData();
+        }
     };
 
-    reader.readAsText(file);
-  }
+    private handleFileUpload = (event: Event) => {
+      const input = event.target as HTMLInputElement;
+      const file = input.files?.[0];
+      if (!file) return;
 
-  public destroy() {
-    const clearButton = this.uploadSection.querySelector(".file-button");
-    const fileInput = this.uploadSection.querySelector("#csvFile");
+      const reader = new FileReader();
+      reader.onload = (e) => {
+          try {
+              const text = e.target?.result as string;
+              const data = parseCSV(text);
 
-    if (fileControlsState.hasCSVData.value) {
-      clearButton?.removeEventListener("click", this.handleClearData);
-    } else {
-      fileInput?.removeEventListener("change", this.handleFileUpload);
+              // Update dataStore directly
+              dataStore.setData(data);
+
+              this.updateUIState(true);
+              console.log("CSV data loaded:", data);
+          } catch (error) {
+              console.error("Error parsing CSV:", error);
+              alert("Error parsing CSV file");
+          }
+      };
+
+      reader.readAsText(file);
+  };
+
+    private handleClearData = () => {
+        dataStore.clear();
+        this.updateUIState(false);
+        this.fileInput.value = '';
+    };
+
+    private updateUIState(hasData: boolean): void {
+        this.hasData.value = hasData;
+        this.uploadIcon.classList.toggle('hidden', hasData);
+        this.clearIcon.classList.toggle('hidden', !hasData);
+        this.buttonText.textContent = hasData ? 'Clear CSV' : 'Upload CSV';
+        this.fileInput.style.display = hasData ? 'none' : 'block';
     }
 
-    this.uploadSection.remove();
-  }
-
-  public setCallback(callback: CsvUploaderOptions["onDataLoad"]) {
-    this.options.onDataLoad = callback;
-  }
+    public destroy(): void {
+        this.fileInput.removeEventListener('change', this.handleFileUpload);
+        this.uploadButton.removeEventListener('click', this.handleButtonClick);
+    }
 }

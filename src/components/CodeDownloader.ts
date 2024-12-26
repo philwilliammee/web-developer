@@ -1,43 +1,46 @@
-import { fileControlsState } from "./FileControls/file-controls.state";
+// src/components/CodeDownloader.ts
+import { dataStore } from "../stores/AppStore";
 
 export class CodeDownloader {
-    private button!: HTMLButtonElement;
+    private button: HTMLButtonElement;
 
-    constructor(container: HTMLElement, editor: any) {
-      this.createButton(container);
-      this.setupEventListeners(editor);
+    constructor() {
+        const button = document.querySelector('.file-button.download') as HTMLButtonElement;
+        if (!button) {
+            throw new Error('Download button not found in DOM');
+        }
+
+        this.button = button;
+        this.setupEventListeners();
     }
 
-    private createButton(container: HTMLElement) {
-      this.button = document.createElement('button');
-      this.button.className = 'file-button download';
-      this.button.innerHTML = `
-        ${fileControlsState.buttonIcons.download}
-        <span>Download Code</span>
-      `;
-      container.appendChild(this.button);
+    private setupEventListeners() {
+        this.button.addEventListener('click', this.handleDownload);
     }
 
-    private setupEventListeners(editor: any) {
-      this.button.addEventListener('click', () => {
-        const code = editor.getValue() || '';
+    private handleDownload = () => {
+        const code = dataStore.codeContent.value.combinedCode;
+        if (!code) {
+            console.error('No code to download');
+            return;
+        }
+
         this.downloadCode(code);
-      });
-    }
+    };
 
     private downloadCode(code: string) {
-      const blob = new Blob([code], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'code.html';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+        const blob = new Blob([code], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'generated-code.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     public destroy() {
-      this.button.remove();
+        this.button.removeEventListener('click', this.handleDownload);
     }
-  }
+}

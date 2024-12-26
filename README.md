@@ -196,48 +196,42 @@ Make it visually appealing with a clean, modern design.</code></pre>
 </ul>
 
 
+# Feature Branches Updated
 
-Branch: feature/base-component
-bash
-Copy code
-git checkout -b feature/base-component
-Create base Component class
-Convert one component (like Chat) to use it
-Test functionality
-Create PR for review
-Branch: feature/centralized-store
-bash
-Copy code
-git checkout -b feature/centralized-store
-Create AppStore
-Move existing signals to store
-Update components to use store
-Test state management
-Create PR for review
-Branch: feature/event-bus
-bash
-Copy code
-git checkout -b feature/event-bus
-Implement EventBus
-Replace direct component communication
-Test event handling
-Create PR for review
-Branch: feature/error-handling
-bash
-Copy code
-git checkout -b feature/error-handling
-Implement ErrorHandler
-Standardize error handling across components
-Test error scenarios
-Create PR for review
-Branch: feature/signal-consistency
-bash
-Copy code
-git checkout -b feature/signal-consistency
-Update remaining components to use signals
-Remove direct DOM updates where possible
-Test reactivity
-Create PR for review
+1. git checkout -b feature/simplified-components
+   - Remove base Component class
+   - Move HTML structure to index.html
+   - Update components to work with DOM directly
+   - Test functionality
+   - Create PR for review
+
+2. git checkout -b feature/store-consolidation
+   - Review and consolidate AppStore usage
+   - Ensure consistent state management
+   - Remove unnecessary signals
+   - Clean up data flow
+   - Create PR for review
+
+3. git checkout -b feature/error-handling
+   - Implement standardized error handling
+   - Add error reporting to store
+   - Improve error UI feedback
+   - Test error scenarios
+   - Create PR for review
+
+4. git checkout -b feature/css-modernization
+   - Move styles to scoped CSS files
+   - Remove CSS-in-JS where possible
+   - Implement better style organization
+   - Test styling across components
+   - Create PR for review
+
+5. git checkout -b feature/code-cleanup
+   - Clean up remaining technical debt
+   - Improve documentation
+   - Add test coverage
+   - Optimize performance
+   - Create PR for review
 
 
 More examples:

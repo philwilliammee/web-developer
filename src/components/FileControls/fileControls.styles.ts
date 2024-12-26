@@ -80,6 +80,11 @@ export const fileControlsStyles = /*css*/ `
     display: none;
   }
 
+  .file-button.upload {
+    cursor: pointer;
+}
+
+
   /* File label styling */
   .file-label {
     display: inline-flex;

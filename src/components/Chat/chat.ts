@@ -36,8 +36,12 @@ export class Chat {
     this.csvUploader = dependencies.csvUploader;
 
     // Get DOM elements
-    this._promptInput = document.querySelector(".prompt-input") as HTMLTextAreaElement;
-    this._chatMessages = document.querySelector(".chat-messages") as HTMLElement;
+    this._promptInput = document.querySelector(
+      ".prompt-input"
+    ) as HTMLTextAreaElement;
+    this._chatMessages = document.querySelector(
+      ".chat-messages"
+    ) as HTMLElement;
 
     if (!this._promptInput || !this._chatMessages) {
       throw new Error("Required chat elements not found in DOM");
@@ -45,8 +49,12 @@ export class Chat {
 
     CSSManager.getInstance().addStyles("chat", chatStyles);
 
-    this.csvUploader.setCallback((data) => {
-      dataStore.setData(data);
+    // Subscribe to dataStore changes
+    dataStore.csvData.subscribe((data) => {
+      console.log("Data updated in Chat:", data);
+      // We could handle any UI updates here if needed
+      // Or we could remove this subscription if we don't need
+      // to react to data changes in the Chat component
     });
 
     this.setupButtonSpinner();
@@ -57,7 +65,6 @@ export class Chat {
       this.updateChatUI(messages);
     });
   }
-
 
   private setupButtonSpinner(): void {
     this.buttonSpinner = new ButtonSpinner();
@@ -70,7 +77,7 @@ export class Chat {
 
     console.log("Event listeners attached to:", {
       button: this._button,
-      promptInput: this._promptInput
+      promptInput: this._promptInput,
     });
   }
 
@@ -118,7 +125,9 @@ export class Chat {
       for (let attempt = 0; attempt <= retries; attempt++) {
         try {
           const messages = chatContext.getTruncatedHistory();
-          const response = await designAssistantInstance.generateWebDesign(messages);
+          const response = await designAssistantInstance.generateWebDesign(
+            messages
+          );
           const { html, css, javascript, description } = response;
 
           if (html || css || javascript) {
@@ -128,7 +137,12 @@ export class Chat {
             );
 
             const fullCode = this.generateFullHtmlCode(html, css, javascript);
-            dataStore.setCodeContent({ html, css, javascript, combinedCode: fullCode });
+            dataStore.setCodeContent({
+              html,
+              css,
+              javascript,
+              combinedCode: fullCode,
+            });
 
             this.codeEditor.updateCode({
               html,
@@ -143,13 +157,19 @@ export class Chat {
           }
         } catch (error: any) {
           if (attempt === retries) throw error;
-          chatContext.addAssistantMessage(`Attempt ${attempt + 1} failed: ${error.message}. Retrying...`, "Error");
+          chatContext.addAssistantMessage(
+            `Attempt ${attempt + 1} failed: ${error.message}. Retrying...`,
+            "Error"
+          );
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
     } catch (error: any) {
       dataStore.setError(error.message);
-      chatContext.addAssistantMessage(`Error generating design: ${error.message}`, "Error");
+      chatContext.addAssistantMessage(
+        `Error generating design: ${error.message}`,
+        "Error"
+      );
     } finally {
       this.setLoading(false);
     }
@@ -161,11 +181,11 @@ export class Chat {
 
     const sampleData = data[0];
     const structure = Object.entries(sampleData)
-      .map(([key, value]) => `${key}: ${typeof value}`)
-      .join(", ");
+        .map(([key, value]) => `${key}: ${typeof value}`)
+        .join(", ");
 
     return `\nAvailable data structure: { ${structure} }.\nData has ${data.length} records.`;
-  }
+}
 
   private updateChatUI(messages: Message[]): void {
     this._chatMessages.innerHTML = "";
@@ -209,7 +229,11 @@ export class Chat {
     }
   }
 
-  private generateFullHtmlCode(html: string, css: string, javascript: string): string {
+  private generateFullHtmlCode(
+    html: string,
+    css: string,
+    javascript: string
+  ): string {
     const data = dataStore.getData();
     return /*html*/ `<!DOCTYPE html>
 <html lang="en">

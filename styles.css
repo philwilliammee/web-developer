@@ -331,6 +331,10 @@ h1 {
   display: none;
 }
 
+.hidden {
+  display: none;
+}
+
 .download-btn {
   padding: 8px 16px;
   background: #2563eb;
@@ -394,10 +398,6 @@ h1 {
 
 .file-button.download {
   color: #4caf50;
-}
-
-.file-input {
-  display: none;
 }
 
 .file-button svg {
