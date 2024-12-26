@@ -36,7 +36,10 @@
                         </div>
                     </header>
 
-                    <div id="chat" class="chat-container">
+                    <div
+                        id="chat"
+                        class="chat-container"
+                    >
                         <div class="chat-section">
                             <div class="chat-messages"></div>
                             <div class="prompt-container">
@@ -47,8 +50,21 @@
                                     cols="33"
                                 ></textarea>
                                 <div class="prompt-actions">
-                                    <button class="btn btn-green generate-btn" type="button">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <button
+                                        class="btn btn-green generate-btn"
+                                        type="button"
+                                    >
+                                        <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            width="20"
+                                            height="20"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="2"
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                        >
                                             <polygon points="21 12 9 18 9 6 21 12"></polygon>
                                         </svg>
                                     </button>
@@ -59,27 +75,37 @@
 
                 </div>
                 <div class="right-column">
+
                     <div class="tab-header">
                         <button
                             id="codeTab"
                             class="active"
+                            data-tab="codeEditor"
                         >
                             Code Editor
                         </button>
-                        <button id="viewTab">Preview</button>
+                        <button
+                            id="viewTab"
+                            data-tab="iframeContainer"
+                        >
+                            Preview
+                        </button>
                     </div>
+
                     <div class="tab-content">
+                        <div
+                            id="codeEditor"
+                            class="editor-container active"
+                        ></div>
                         <div
                             id="iframeContainer"
                             class="iframe-container"
-                            style="display: none;"
                         >
                             <iframe
                                 id="outputIframe"
                                 sandbox="allow-scripts allow-same-origin allow-modals"
                             ></iframe>
                         </div>
-                        <div id="codeEditor" class="editor-container">
                     </div>
                 </div>
             </div>
@@ -90,26 +116,67 @@
         <div class="file-controls">
             <!-- Download button -->
             <button class="file-button download">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line
+                        x1="12"
+                        y1="15"
+                        x2="12"
+                        y2="3"
+                    ></line>
                 </svg>
                 <span>Download Code</span>
             </button>
 
             <!-- CSV Upload/Clear button -->
             <label class="file-button upload">
-                <input type="file" id="csvFile" accept=".csv" class="file-input">
-                <svg class="upload-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
+                <input
+                    type="file"
+                    id="csvFile"
+                    accept=".csv"
+                    class="file-input"
+                >
+                <svg
+                    class="upload-icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line
+                        x1="12"
+                        y1="3"
+                        x2="12"
+                        y2="15"
+                    ></line>
                 </svg>
-                <svg class="clear-icon hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 6h18"/>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
-                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                <svg
+                    class="clear-icon hidden"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                >
+                    <path d="M3 6h18"></path>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
                 <span class="button-text">Upload CSV</span>
             </label>

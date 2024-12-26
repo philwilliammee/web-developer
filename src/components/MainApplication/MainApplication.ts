@@ -1,4 +1,3 @@
-// components/MainApplication/MainApplication.ts
 import { Chat } from "../Chat/chat";
 import { ConsoleWrapper } from "../../console-wrapper";
 import { CsvUploader } from "../CsvUploader";
@@ -16,35 +15,29 @@ export class MainApplication {
   private consoleWrapper!: ConsoleWrapper;
 
   // DOM Elements
-  private viewTab!: HTMLElement;
-  private codeTab!: HTMLElement;
-  private iframeContainer!: HTMLElement;
+  private tabs!: NodeListOf<HTMLButtonElement>;
+  private tabContents!: NodeListOf<HTMLElement>;
   private codeEditorContainer!: HTMLElement;
+  private iframeContainer!: HTMLElement;
   private executeButton!: HTMLButtonElement;
-  private controlsContainer!: HTMLElement;
 
   constructor() {
-    console.log('Initializing MainApplication');
+    console.log("Initializing MainApplication");
     this.initializeDOMElements();
     this.initializeComponents();
     this.setupEventListeners();
     this.initializeStyles();
-
-    // Set initial state
-    this.showCodeEditor();
   }
 
   private initializeDOMElements(): void {
-    // Get DOM elements
-    this.viewTab = document.getElementById("viewTab") as HTMLElement;
-    this.codeTab = document.getElementById("codeTab") as HTMLElement;
-    this.iframeContainer = document.getElementById("iframeContainer") as HTMLElement;
+    this.tabs = document.querySelectorAll('.tab-header button');
+    this.tabContents = document.querySelectorAll('.tab-content > div');
     this.codeEditorContainer = document.getElementById("codeEditor") as HTMLElement;
+    this.iframeContainer = document.getElementById("iframeContainer") as HTMLElement;  // Add this back
     this.executeButton = document.querySelector(".execute-btn") as HTMLButtonElement;
-    this.controlsContainer = document.querySelector(".file-controls") as HTMLElement;
 
-    if (!this.viewTab || !this.codeTab || !this.iframeContainer ||
-        !this.codeEditorContainer || !this.executeButton || !this.controlsContainer) {
+    if (!this.tabs.length || !this.tabContents.length ||
+        !this.codeEditorContainer || !this.iframeContainer || !this.executeButton) {
       throw new Error("Required DOM elements not found");
     }
   }
@@ -71,31 +64,37 @@ export class MainApplication {
     // Initialize Chat
     this.chat = new Chat({
       codeEditor: this.codeEditor,
-      csvUploader: this.csvUploader
+      csvUploader: this.csvUploader,
     });
   }
 
   private setupEventListeners(): void {
-    this.viewTab.addEventListener("click", () => this.showPreview());
-    this.codeTab.addEventListener("click", () => this.showCodeEditor());
+    this.tabs.forEach(tab => {
+      tab.addEventListener('click', () => this.switchTab(tab));
+    });
+
     this.executeButton.addEventListener("click", () => this.executeCode());
   }
 
-  private showPreview(): void {
-    this.viewTab.classList.add("active");
-    this.codeTab.classList.remove("active");
-    this.iframeContainer.style.display = "block";
-    this.codeEditorContainer.style.display = "none";
-  }
+  private switchTab(clickedTab: HTMLButtonElement): void {
+    const targetId = clickedTab.dataset.tab;
+    if (!targetId) return;
 
-  private showCodeEditor(): void {
-    this.codeTab.classList.add("active");
-    this.viewTab.classList.remove("active");
-    this.codeEditorContainer.style.display = "block";
-    this.iframeContainer.style.display = "none";
+    // Update tab buttons
+    this.tabs.forEach(tab => {
+      tab.classList.toggle('active', tab === clickedTab);
+    });
 
-    const code = this.codeEditor.getCode();
-    this.codeEditor.updateCode(code);
+    // Update content sections
+    this.tabContents.forEach(content => {
+      content.classList.toggle('active', content.id === targetId);
+    });
+
+    // If switching to code editor, refresh it
+    if (targetId === 'codeEditor') {
+      const code = this.codeEditor.getCode();
+      this.codeEditor.updateCode(code);
+    }
   }
 
   private async executeCode(): Promise<void> {
@@ -118,7 +117,11 @@ export class MainApplication {
       const consoleOutput = this.consoleWrapper.getLogs();
       console.log("assistant", `Code executed successfully\n${consoleOutput}`);
 
-      this.showPreview();
+      // Switch to preview tab
+      const previewTab = document.querySelector('[data-tab="iframeContainer"]');
+      if (previewTab instanceof HTMLButtonElement) {
+        this.switchTab(previewTab);
+      }
     } catch (error: any) {
       console.error("Error executing code:", error);
       console.log("assistant", `Error: ${error.message}`);
@@ -157,7 +160,7 @@ export class MainApplication {
   }
 
   private initializeStyles(): void {
-    CSSManager.getInstance().addStyles('main-application', mainApplicationStyles);
+    CSSManager.getInstance().addStyles("main-application", mainApplicationStyles);
     this.codeEditorContainer.style.height = "500px";
     this.codeEditorContainer.style.position = "relative";
   }
@@ -167,6 +170,6 @@ export class MainApplication {
     this.codeEditor?.destroy();
     this.csvUploader?.destroy?.();
     this.codeDownloader?.destroy?.();
-    CSSManager.getInstance().removeStyles('main-application');
+    CSSManager.getInstance().removeStyles("main-application");
   }
 }
