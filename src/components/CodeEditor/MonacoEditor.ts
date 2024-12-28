@@ -2,22 +2,28 @@ import * as monaco from "monaco-editor";
 // Import the worker scripts
 import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import HtmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import CssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
+import JsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+import JsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
+import { EditorType } from "./CodeEditorComponent";
 
 export class MonacoEditor {
-
   private editor: monaco.editor.IStandaloneCodeEditor | null = null;
   private container: HTMLElement;
   private value: string;
   private onChange: (value: string) => void;
+  private type: "html" | "css" | "javascript" | "json";
 
   constructor(
     container: HTMLElement,
     initialValue: string = "",
-    onChange: (value: string) => void
+    onChange: (value: string) => void,
+    type: "html" | "css" | "javascript" | "json"
   ) {
     this.container = container;
     this.value = initialValue;
     this.onChange = onChange;
+    this.type = type;
 
     this.initMonacoEnvironment();
     this.init();
@@ -27,42 +33,67 @@ export class MonacoEditor {
     // Configure Monaco Environment to use the imported workers
     (self as any).MonacoEnvironment = {
       getWorker: function (_: any, label: string) {
-        if (label === "html") {
-          return new HtmlWorker();
+        switch (label) {
+          case "html":
+            return new HtmlWorker();
+          case "css":
+            return new CssWorker();
+          case "javascript":
+          case "typescript":
+            return new JsWorker();
+          case "json":
+            return new JsonWorker();
+          default:
+            return new EditorWorker();
         }
-        return new EditorWorker();
       },
     };
   }
 
   private init() {
-    // Configure HTML language defaults
-    monaco.languages.html.htmlDefaults.setOptions({
-      format: {
-        tabSize: 2,
-        insertSpaces: true,
-        wrapLineLength: 120,
-        unformatted: "wbr",
-        contentUnformatted: "pre,code,textarea",
-        indentInnerHtml: true,
-        preserveNewLines: true,
-        maxPreserveNewLines: undefined,
-        indentHandlebars: false,
-        endWithNewline: false,
-        extraLiners: "head, body, /html",
-        wrapAttributes: "auto",
-      },
-      suggest: {
-        html5: true,
-        css: true,
-        javascript: true,
-      },
-    });
+    // Configure language-specific options
+    if (this.type === "html") {
+      monaco.languages.html.htmlDefaults.setOptions({
+        format: {
+          tabSize: 2,
+          insertSpaces: true,
+          wrapLineLength: 120,
+          unformatted: "wbr",
+          contentUnformatted: "pre,code,textarea",
+          indentInnerHtml: true,
+          preserveNewLines: true,
+          maxPreserveNewLines: undefined,
+          indentHandlebars: false,
+          endWithNewline: false,
+          extraLiners: "head, body, /html",
+          wrapAttributes: "auto",
+        },
+        suggest: {
+          html5: true,
+        },
+      });
+    }
+
+    if (this.type === "css") {
+      monaco.languages.css.cssDefaults.setOptions({
+        validate: true,
+        lint: {
+          compatibleVendorPrefixes: "warning",
+        },
+      });
+    }
+
+    if (this.type === "javascript") {
+      monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+        noSemanticValidation: true,
+        noSyntaxValidation: false,
+      });
+    }
 
     this.editor = monaco.editor.create(this.container, {
       value: this.value,
-      language: "html", // Set to HTML
-      theme: "vs-light", // You can switch to 'vs-dark' if needed
+      language: this.type, // Now using the correct language type
+      theme: "vs-light",
       automaticLayout: true,
       minimap: {
         enabled: false,
@@ -88,6 +119,9 @@ export class MonacoEditor {
       this.value = this.editor?.getValue() || "";
       this.onChange(this.value);
     });
+
+    // Add type-specific class to container for styling
+    this.container.classList.add(`${this.type}-editor`);
   }
 
   public getValue(): string {
@@ -102,7 +136,7 @@ export class MonacoEditor {
   }
 
   public show() {
-    this.container.style.display = 'block';
+    this.container.style.display = "block";
     this.editor?.layout();
   }
 
@@ -113,6 +147,7 @@ export class MonacoEditor {
   public dispose() {
     if (this.editor) {
       this.editor.dispose();
+      this.container.classList.remove(`${this.type}-editor`);
     }
   }
 

@@ -31,7 +31,7 @@ export const chatStyles = /*css*/`
     background-color: #dbeafe;
   }
 
-  .prompt-form {
+  .prompt-container {
     display: flex;
     flex-direction: column;
     justify-content: end;
@@ -72,26 +72,24 @@ export const chatStyles = /*css*/`
   }
 
   .prompt-actions {
-    display: flex;
-    justify-content: flex-end;
+    position: relative;
+
   }
 
   .btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 0.375rem;
-    color: white;
     cursor: pointer;
-    font-size: 0.875rem;
-    transition: all 0.2s;
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
   }
 
-  .btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .btn:hover {
+    opacity: 0.8;
+  }
+
+  .prompt-container {
+    position: relative;
+    z-index: 1;
   }
 
   .btn-green {

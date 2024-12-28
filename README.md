@@ -89,7 +89,7 @@ npm run dev</code></pre>
 <ol>
   <li>Click the "Upload CSV" button in the interface</li>
   <li>Select your CSV file or use the provided example data</li>
-  <li>The data will be available as <code>window.data</code> in your generated code</li>
+  <li>The data structure will be passed to the AI attached to each user prompt</li>
 </ol>
 
 <h3>Data Visualization Examples</h3>
@@ -117,11 +117,11 @@ Use animations for transitions and make it interactive.</code></pre>
 3. Size points by profit_margin
 4. Add tooltips showing product details on hover
 Make it visually appealing with a clean, modern design.</code></pre>
-</ol>
 
+<h2>Creative Examples</h2>
+<p>Beyond data visualization, you can create interactive games, simulations, and 3D graphics:</p>
 
 <h3>Interactive Games</h3>
-
 <pre><code>Create a classic Snake game with:
 - WASD controls
 - Score tracking
@@ -129,7 +129,6 @@ Make it visually appealing with a clean, modern design.</code></pre>
 - Game over screen</code></pre>
 
 <h3>Physics Simulations</h3>
-
 <pre><code>Create a particle system with:
 - Gravity effects
 - Collision detection
@@ -137,13 +136,11 @@ Make it visually appealing with a clean, modern design.</code></pre>
 - Color transitions</code></pre>
 
 <h3>3D Graphics</h3>
-
 <pre><code>Generate a rotating 3D scene with:
 - Textured cube
 - Orbit controls
 - Ambient lighting
 - Responsive canvas</code></pre>
-
 
 <h2>Technical Architecture</h2>
 
@@ -195,5 +192,64 @@ Make it visually appealing with a clean, modern design.</code></pre>
   <li>[ ] Code snippet library</li>
   <li>[ ] Custom theme support</li>
   <li>[ ] Offline capability</li>
-  <li>[ ] In browser file storage and sqLite database</li>
+  <li>[ ] Pass the rendered html back to the AI model for feedback</li>
 </ul>
+
+
+# Feature Branches Updated
+
+1. git checkout -b feature/simplified-components
+   - Remove base Component class
+   - Move HTML structure to index.html
+   - Update components to work with DOM directly
+   - Test functionality
+   - Create PR for review
+
+2. git checkout -b feature/store-consolidation
+   - Review and consolidate AppStore usage
+   - Ensure consistent state management
+   - Remove unnecessary signals
+   - Clean up data flow
+   - Create PR for review
+
+3. git checkout -b feature/error-handling
+   - Implement standardized error handling
+   - Add error reporting to store
+   - Improve error UI feedback
+   - Test error scenarios
+   - Create PR for review
+
+4. git checkout -b feature/css-modernization
+   - Move styles to scoped CSS files
+   - Remove CSS-in-JS where possible
+   - Implement better style organization
+   - Test styling across components
+   - Create PR for review
+
+5. git checkout -b feature/code-cleanup
+   - Clean up remaining technical debt
+   - Improve documentation
+   - Add test coverage
+   - Optimize performance
+   - Create PR for review
+
+
+More examples:
+show me something interesting about this data.
+> Interactive weather dashboard showing temperature and humidity trends over time with key statistics including average temperature, maximum wind speed, and humidity range
+
+Available data structure: { time: string, temperature_2m: number, relative_humidity_2m: number, wind_speed_10m: number }. Data has 168 records.
+also chart wind speed
+
+> Comprehensive weather dashboard featuring a multi-axis line chart showing temperature, humidity, and wind speed trends over time, along with statistical cards displaying averages and ranges for each metric
+
+Available data structure: { time: string, temperature_2m: number, relative_humidity_2m: number, wind_speed_10m: number }. Data has 168 records.
+can we make some correlation between the temperature and the windspeed and humidity?
+
+> Correlation analysis dashboard showing scatter plots of temperature vs wind speed and temperature vs humidity, with calculated correlation coefficients and interpretation of correlation strength
+
+Available data structure: { time: string, temperature_2m: number, relative_humidity_2m: number, wind_speed_10m: number }. Data has 168 records.
+What insights does this give us? Correlation Analysis Temperature-Wind Correlation: -0.427 Moderate negative correlation
+
+> Temperature-Humidity Correlation: 0.406 Moderate positive correlation
+Comprehensive analysis of weather patterns showing relationships between temperature, wind speed, and humidity, with detailed insights about correlations and their practical implications

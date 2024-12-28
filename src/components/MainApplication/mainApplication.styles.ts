@@ -14,6 +14,13 @@ export const mainApplicationStyles = /*css*/ `
   }
     */
 
+  #codeEditor {
+    height: 500px;
+    position: relative;
+  }
+
+
+
   .iframe-container {
     width: 100%;
     height: 100%;
@@ -27,10 +34,19 @@ export const mainApplicationStyles = /*css*/ `
   }
 
   .editor-container {
+    min-height: 500px;
     width: 100%;
     height: 100%;
     position: relative;
   }
+
+  .editor-containers,
+  #code-editor {
+    display: flex ;
+    flex-direction: column;
+    height: 100%;
+  }
+
 
   .tab-header {
     display: flex;
