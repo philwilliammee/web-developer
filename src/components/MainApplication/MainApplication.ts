@@ -45,7 +45,8 @@ export class MainApplication {
   private initializeComponents(): void {
     // Initialize CodeEditor
     this.codeEditor = new CodeEditorComponent("code-editor");
-    this.codeEditorContainer.appendChild(this.codeEditor.getElement());
+    // Remove this line since the element is already in the DOM:
+    // this.codeEditorContainer.appendChild(this.codeEditor.getElement());
 
     // Set default content
     this.codeEditor.updateCode({
@@ -66,7 +67,7 @@ export class MainApplication {
       codeEditor: this.codeEditor,
       csvUploader: this.csvUploader,
     });
-  }
+}
 
   private setupEventListeners(): void {
     this.tabs.forEach(tab => {
@@ -135,8 +136,8 @@ export class MainApplication {
     const newIframe = document.createElement("iframe");
     newIframe.id = "outputIframe";
     newIframe.sandbox.value = "allow-scripts allow-same-origin allow-modals";
-    newIframe.style.width = this.iframeContainer.style.width;
-    newIframe.style.height = this.iframeContainer.style.height;
+    // newIframe.style.width = this.iframeContainer.style.width;
+    // newIframe.style.height = this.iframeContainer.style.height;
 
     oldIframe.parentElement?.replaceChild(newIframe, oldIframe);
     return newIframe;
@@ -161,8 +162,8 @@ export class MainApplication {
 
   private initializeStyles(): void {
     CSSManager.getInstance().addStyles("main-application", mainApplicationStyles);
-    this.codeEditorContainer.style.height = "500px";
-    this.codeEditorContainer.style.position = "relative";
+    // this.codeEditorContainer.style.height = "500px";
+    // this.codeEditorContainer.style.position = "relative";
   }
 
   public destroy(): void {

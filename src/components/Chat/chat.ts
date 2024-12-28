@@ -22,94 +22,53 @@ interface ChatDependencies {
 export class Chat {
   private codeEditor: CodeEditorComponent;
   private csvUploader: CsvUploader;
-  private buttonSpinner?: ButtonSpinner;
-
-  // DOM references
-  private _promptInput: HTMLTextAreaElement;
-  private _chatMessages: HTMLElement;
-  private _button!: HTMLButtonElement;
+  private buttonSpinner: ButtonSpinner;
+  private promptInput: HTMLTextAreaElement;
+  private chatMessages: HTMLElement;
+  private button: HTMLButtonElement;
 
   constructor(dependencies: ChatDependencies) {
-    console.log("Initializing chat component");
-
     this.codeEditor = dependencies.codeEditor;
     this.csvUploader = dependencies.csvUploader;
 
-    // Get DOM elements
-    this._promptInput = document.querySelector(
+    // Initialize DOM elements
+    this.promptInput = document.querySelector(
       ".prompt-input"
     ) as HTMLTextAreaElement;
-    this._chatMessages = document.querySelector(
-      ".chat-messages"
-    ) as HTMLElement;
+    this.chatMessages = document.querySelector(".chat-messages") as HTMLElement;
 
-    if (!this._promptInput || !this._chatMessages) {
-      throw new Error("Required chat elements not found in DOM");
+    if (!this.promptInput || !this.chatMessages) {
+      throw new Error("Required DOM elements not found");
     }
 
-    CSSManager.getInstance().addStyles("chat", chatStyles);
-
-    // Subscribe to dataStore changes
-    dataStore.csvData.subscribe((data) => {
-      console.log("Data updated in Chat:", data);
-      // We could handle any UI updates here if needed
-      // Or we could remove this subscription if we don't need
-      // to react to data changes in the Chat component
-    });
-
-    this.setupButtonSpinner();
-    this.setupEventListeners();
-
-    // Set up chat context listener
-    chatContext.onMessagesChange((messages) => {
-      this.updateChatUI(messages);
-    });
-  }
-
-  private setupButtonSpinner(): void {
+    // Setup spinner and button
     this.buttonSpinner = new ButtonSpinner();
-    this._button = this.buttonSpinner.getElement();
+    this.button = this.buttonSpinner.getElement();
+    this.button.onclick = this.handleGenerate;
+    this.promptInput.onkeydown = this.handleKeyDown;
+
+    // Initialize styles and listeners
+    CSSManager.getInstance().addStyles("chat", chatStyles);
+    chatContext.onMessagesChange(this.updateChatUI);
   }
 
-  private setupEventListeners(): void {
-    this._button.addEventListener("click", this._handleGenerate);
-    this._promptInput.addEventListener("keydown", this._handleKeyDown);
-
-    console.log("Event listeners attached to:", {
-      button: this._button,
-      promptInput: this._promptInput,
-    });
-  }
-
-  private readonly _handleGenerate = (e: MouseEvent): void => {
-    console.log("Generate handler called");
+  private handleGenerate = (e: MouseEvent): void => {
     e.preventDefault();
-
     if (!dataStore.isGenerating.value) {
       this.generateCodeWithRetry();
     }
   };
 
-  private readonly _handleKeyDown = (e: KeyboardEvent): void => {
-    console.log("Keydown handler called", e.key);
-
+  private handleKeyDown = (e: KeyboardEvent): void => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      this._handleGenerate(e as unknown as MouseEvent);
+      this.handleGenerate(new MouseEvent("click"));
     }
   };
 
   private async generateCodeWithRetry(retries = 1): Promise<void> {
-    const prompt = this._promptInput.value.trim();
-    console.log("Generating code with prompt:", prompt);
-
-    if (!prompt || dataStore.isGenerating.value) {
-      console.log("No prompt or already generating", {
-        hasPrompt: !!prompt,
-        isGenerating: dataStore.isGenerating.value,
-      });
-      return;
-    }
+    const prompt = this.promptInput.value.trim();
+    if (!prompt || dataStore.isGenerating.value) return;
 
     this.setLoading(true);
     dataStore.setError(null);
@@ -143,7 +102,6 @@ export class Chat {
               javascript,
               combinedCode: fullCode,
             });
-
             this.codeEditor.updateCode({
               html,
               css,
@@ -152,7 +110,7 @@ export class Chat {
               data: dataStore.getData() || [],
             });
 
-            this._promptInput.value = "";
+            this.promptInput.value = "";
             break;
           }
         } catch (error: any) {
@@ -181,15 +139,14 @@ export class Chat {
 
     const sampleData = data[0];
     const structure = Object.entries(sampleData)
-        .map(([key, value]) => `${key}: ${typeof value}`)
-        .join(", ");
+      .map(([key, value]) => `${key}: ${typeof value}`)
+      .join(", ");
 
     return `\nAvailable data structure: { ${structure} }.\nData has ${data.length} records.`;
-}
+  }
 
-  private updateChatUI(messages: Message[]): void {
-    this._chatMessages.innerHTML = "";
-
+  private updateChatUI = (messages: Message[]): void => {
+    this.chatMessages.innerHTML = "";
     messages.forEach((message) => {
       if (message.role === "user") {
         message.content?.forEach((content) => {
@@ -210,23 +167,20 @@ export class Chat {
         }
       }
     });
-  }
+  };
 
   private appendMessageToDOM(message: ChatMessage): void {
     const messageElement = document.createElement("div");
     messageElement.className = `chat-message ${message.role}`;
     messageElement.textContent = message.message;
-
-    this._chatMessages.appendChild(messageElement);
-    this._chatMessages.scrollTop = this._chatMessages.scrollHeight;
+    this.chatMessages.appendChild(messageElement);
+    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
   }
 
   private setLoading(loading: boolean): void {
     dataStore.setGenerating(loading);
-    this._promptInput.disabled = loading;
-    if (this.buttonSpinner) {
-      loading ? this.buttonSpinner.show() : this.buttonSpinner.hide();
-    }
+    this.promptInput.disabled = loading;
+    loading ? this.buttonSpinner.show() : this.buttonSpinner.hide();
   }
 
   private generateFullHtmlCode(
@@ -269,29 +223,10 @@ export class Chat {
 </html>`;
   }
 
-  protected cleanup(): void {
-    console.log("Cleaning up chat component");
-
-    this._button.removeEventListener("click", this._handleGenerate);
-    this._promptInput.removeEventListener("keydown", this._handleKeyDown);
-
-    if (this.buttonSpinner) {
-      this.buttonSpinner.destroy();
-    }
-
-    CSSManager.getInstance().removeStyles("chat");
-  }
-
   public destroy(): void {
-    console.log("Cleaning up chat component");
-
-    this._button.removeEventListener("click", this._handleGenerate);
-    this._promptInput.removeEventListener("keydown", this._handleKeyDown);
-
-    if (this.buttonSpinner) {
-      this.buttonSpinner.destroy();
-    }
-
+    this.button.onclick = null;
+    this.promptInput.onkeydown = null;
+    this.buttonSpinner.destroy();
     CSSManager.getInstance().removeStyles("chat");
   }
 }

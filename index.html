@@ -93,10 +93,19 @@
                     </div>
 
                     <div class="tab-content">
-                        <div
-                            id="codeEditor"
-                            class="editor-container active"
-                        ></div>
+                        <!-- Code Editors -->
+                        <div id="codeEditor" class="editor-container active">
+                            <div id="code-editor">
+                                <div class="editor-tabs">
+                                    <button class="editor-tab active" data-editor="combined">Combined</button>
+                                    <button class="editor-tab" data-editor="html">HTML</button>
+                                    <button class="editor-tab" data-editor="css">CSS</button>
+                                    <button class="editor-tab" data-editor="javascript">JavaScript</button>
+                                    <button class="editor-tab" data-editor="data">Data</button>
+                                </div>
+                                <div class="editor-containers"></div>
+                            </div>
+                        </div>
                         <div
                             id="iframeContainer"
                             class="iframe-container"
