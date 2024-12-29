@@ -5,7 +5,10 @@ import HtmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
 import CssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
 import JsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import JsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
-import { EditorType } from "./CodeEditorComponent";
+
+interface MonacoEditorOptions {
+  readOnly?: boolean;
+}
 
 export class MonacoEditor {
   private editor: monaco.editor.IStandaloneCodeEditor | null = null;
@@ -13,17 +16,20 @@ export class MonacoEditor {
   private value: string;
   private onChange: (value: string) => void;
   private type: "html" | "css" | "javascript" | "json";
+  private options: MonacoEditorOptions = {};
 
   constructor(
     container: HTMLElement,
     initialValue: string = "",
     onChange: (value: string) => void,
-    type: "html" | "css" | "javascript" | "json"
+    type: "html" | "css" | "javascript" | "json",
+    options: MonacoEditorOptions = {}
   ) {
     this.container = container;
     this.value = initialValue;
     this.onChange = onChange;
     this.type = type;
+    this.options = options;
 
     this.initMonacoEnvironment();
     this.init();
@@ -98,6 +104,7 @@ export class MonacoEditor {
       minimap: {
         enabled: false,
       },
+      readOnly: this.options.readOnly,
       scrollBeyondLastLine: false,
       fontSize: 14,
       lineNumbers: "on",

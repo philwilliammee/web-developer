@@ -5,6 +5,7 @@ import { CodeDownloader } from "../CodeDownloader";
 import { CodeEditorComponent } from "../CodeEditor/CodeEditorComponent";
 import { CSSManager } from "../../utils/css-manager";
 import { mainApplicationStyles } from "./mainApplication.styles";
+import { store } from "../../stores/AppStore";
 
 export class MainApplication {
   // Components
@@ -30,14 +31,25 @@ export class MainApplication {
   }
 
   private initializeDOMElements(): void {
-    this.tabs = document.querySelectorAll('.tab-header button');
-    this.tabContents = document.querySelectorAll('.tab-content > div');
-    this.codeEditorContainer = document.getElementById("codeEditor") as HTMLElement;
-    this.iframeContainer = document.getElementById("iframeContainer") as HTMLElement;  // Add this back
-    this.executeButton = document.querySelector(".execute-btn") as HTMLButtonElement;
+    this.tabs = document.querySelectorAll(".tab-header button");
+    this.tabContents = document.querySelectorAll(".tab-content > div");
+    this.codeEditorContainer = document.getElementById(
+      "codeEditor"
+    ) as HTMLElement;
+    this.iframeContainer = document.getElementById(
+      "iframeContainer"
+    ) as HTMLElement; // Add this back
+    this.executeButton = document.querySelector(
+      ".execute-btn"
+    ) as HTMLButtonElement;
 
-    if (!this.tabs.length || !this.tabContents.length ||
-        !this.codeEditorContainer || !this.iframeContainer || !this.executeButton) {
+    if (
+      !this.tabs.length ||
+      !this.tabContents.length ||
+      !this.codeEditorContainer ||
+      !this.iframeContainer ||
+      !this.executeButton
+    ) {
       throw new Error("Required DOM elements not found");
     }
   }
@@ -49,12 +61,11 @@ export class MainApplication {
     // this.codeEditorContainer.appendChild(this.codeEditor.getElement());
 
     // Set default content
-    this.codeEditor.updateCode({
+    // Initialize with default content using store
+    store.setAllCode({
       html: "<h1>Hello, World!</h1>",
       css: "h1 { color: red; }",
       javascript: 'console.log("Hello, World!");',
-      combinedCode: this.getDefaultCombinedCode(),
-      data: [],
     });
 
     // Initialize utility components
@@ -67,11 +78,11 @@ export class MainApplication {
       codeEditor: this.codeEditor,
       csvUploader: this.csvUploader,
     });
-}
+  }
 
   private setupEventListeners(): void {
-    this.tabs.forEach(tab => {
-      tab.addEventListener('click', () => this.switchTab(tab));
+    this.tabs.forEach((tab) => {
+      tab.addEventListener("click", () => this.switchTab(tab));
     });
 
     this.executeButton.addEventListener("click", () => this.executeCode());
@@ -82,19 +93,18 @@ export class MainApplication {
     if (!targetId) return;
 
     // Update tab buttons
-    this.tabs.forEach(tab => {
-      tab.classList.toggle('active', tab === clickedTab);
+    this.tabs.forEach((tab) => {
+      tab.classList.toggle("active", tab === clickedTab);
     });
 
     // Update content sections
-    this.tabContents.forEach(content => {
-      content.classList.toggle('active', content.id === targetId);
+    this.tabContents.forEach((content) => {
+      content.classList.toggle("active", content.id === targetId);
     });
 
-    // If switching to code editor, refresh it
-    if (targetId === 'codeEditor') {
-      const code = this.codeEditor.getCode();
-      this.codeEditor.updateCode(code);
+    // If switching to code editor, refresh layout
+    if (targetId === "codeEditor") {
+      this.codeEditor.layoutEditors();
     }
   }
 
@@ -132,7 +142,9 @@ export class MainApplication {
   }
 
   private resetIframe(): HTMLIFrameElement {
-    const oldIframe = document.getElementById("outputIframe") as HTMLIFrameElement;
+    const oldIframe = document.getElementById(
+      "outputIframe"
+    ) as HTMLIFrameElement;
     const newIframe = document.createElement("iframe");
     newIframe.id = "outputIframe";
     newIframe.sandbox.value = "allow-scripts allow-same-origin allow-modals";
@@ -161,7 +173,10 @@ export class MainApplication {
   }
 
   private initializeStyles(): void {
-    CSSManager.getInstance().addStyles("main-application", mainApplicationStyles);
+    CSSManager.getInstance().addStyles(
+      "main-application",
+      mainApplicationStyles
+    );
     // this.codeEditorContainer.style.height = "500px";
     // this.codeEditorContainer.style.position = "relative";
   }

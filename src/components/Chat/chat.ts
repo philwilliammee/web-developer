@@ -6,7 +6,8 @@ import { CodeEditorComponent } from "../CodeEditor/CodeEditorComponent";
 import { CsvUploader } from "../CsvUploader";
 import { CSSManager } from "../../utils/css-manager";
 import { chatStyles } from "./chat.styles";
-import { dataStore } from "../../stores/AppStore";
+import { store } from "../../stores/AppStore";
+import { effect } from "@preact/signals-core";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -20,17 +21,13 @@ interface ChatDependencies {
 }
 
 export class Chat {
-  private codeEditor: CodeEditorComponent;
-  private csvUploader: CsvUploader;
   private buttonSpinner: ButtonSpinner;
   private promptInput: HTMLTextAreaElement;
   private chatMessages: HTMLElement;
   private button: HTMLButtonElement;
+  private cleanup: () => void;
 
   constructor(dependencies: ChatDependencies) {
-    this.codeEditor = dependencies.codeEditor;
-    this.csvUploader = dependencies.csvUploader;
-
     // Initialize DOM elements
     this.promptInput = document.querySelector(
       ".prompt-input"
@@ -50,11 +47,18 @@ export class Chat {
     // Initialize styles and listeners
     CSSManager.getInstance().addStyles("chat", chatStyles);
     chatContext.onMessagesChange(this.updateChatUI);
+
+    // Setup loading state effect
+    this.cleanup = effect(() => {
+      const isGenerating = store.isGenerating.value;
+      this.promptInput.disabled = isGenerating;
+      isGenerating ? this.buttonSpinner.show() : this.buttonSpinner.hide();
+    });
   }
 
   private handleGenerate = (e: MouseEvent): void => {
     e.preventDefault();
-    if (!dataStore.isGenerating.value) {
+    if (!store.isGenerating.value) {
       this.generateCodeWithRetry();
     }
   };
@@ -67,20 +71,19 @@ export class Chat {
   };
 
   private async generateCodeWithRetry(retries = 1): Promise<void> {
-    const prompt = this.promptInput.value.trim();
-    if (!prompt || dataStore.isGenerating.value) return;
+    const prompt = this.promptInput?.value.trim();
+    if (!prompt || store.isGenerating.value) return;
 
-    this.setLoading(true);
-    dataStore.setError(null);
+    const data = store.getData();
+    if (data) {
+      chatContext.addUserMessage(this.getDataStructureDescription());
+    }
+
+    chatContext.addUserMessage(prompt);
+    store.setGenerating(true);
+    store.setError(null);
 
     try {
-      const data = dataStore.getData();
-      if (data) {
-        chatContext.addUserMessage(this.getDataStructureDescription());
-      }
-
-      chatContext.addUserMessage(prompt);
-
       for (let attempt = 0; attempt <= retries; attempt++) {
         try {
           const messages = chatContext.getTruncatedHistory();
@@ -95,46 +98,32 @@ export class Chat {
               description
             );
 
-            const fullCode = this.generateFullHtmlCode(html, css, javascript);
-            dataStore.setCodeContent({
-              html,
-              css,
-              javascript,
-              combinedCode: fullCode,
-            });
-            this.codeEditor.updateCode({
-              html,
-              css,
-              javascript,
-              combinedCode: fullCode,
-              data: dataStore.getData() || [],
-            });
-
+            store.setAllCode({ html, css, javascript });
             this.promptInput.value = "";
             break;
           }
         } catch (error: any) {
           if (attempt === retries) throw error;
-          chatContext.addAssistantMessage(
-            `Attempt ${attempt + 1} failed: ${error.message}. Retrying...`,
-            "Error"
-          );
+          const errorMessage = `Attempt ${attempt + 1} failed: ${
+            error.message
+          }. Retrying...`;
+          chatContext.addAssistantMessage(errorMessage, "Error");
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
     } catch (error: any) {
-      dataStore.setError(error.message);
+      store.setError(error.message);
       chatContext.addAssistantMessage(
         `Error generating design: ${error.message}`,
         "Error"
       );
     } finally {
-      this.setLoading(false);
+      store.setGenerating(false);
     }
   }
 
   private getDataStructureDescription(): string {
-    const data = dataStore.getData();
+    const data = store.getData();
     if (!data?.length) return "";
 
     const sampleData = data[0];
@@ -177,53 +166,8 @@ export class Chat {
     this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
   }
 
-  private setLoading(loading: boolean): void {
-    dataStore.setGenerating(loading);
-    this.promptInput.disabled = loading;
-    loading ? this.buttonSpinner.show() : this.buttonSpinner.hide();
-  }
-
-  private generateFullHtmlCode(
-    html: string,
-    css: string,
-    javascript: string
-  ): string {
-    const data = dataStore.getData();
-    return /*html*/ `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, sans-serif;
-    }
-    ${css}
-  </style>
-</head>
-<body>
-  ${html}
-  <script>
-    (function() {
-      try {
-        const data = ${data ? JSON.stringify(data) : "[]"};
-        window.data = data;
-        ${javascript}
-      } catch (error) {
-        console.error('Error in visualization:', error);
-        document.body.innerHTML += '<div style="color: red; padding: 1rem;">Error: ' + error.message + '</div>';
-      }
-    })();
-  </script>
-</body>
-</html>`;
-  }
-
   public destroy(): void {
+    this.cleanup(); // Clean up the effect
     this.button.onclick = null;
     this.promptInput.onkeydown = null;
     this.buttonSpinner.destroy();
