@@ -2,8 +2,6 @@ import { Chat } from "../Chat/chat";
 import { CsvUploader } from "../CsvUploader";
 import { CodeDownloader } from "../CodeDownloader";
 import { CodeEditorComponent } from "../CodeEditor/CodeEditorComponent";
-import { CSSManager } from "../../utils/css-manager";
-import { mainApplicationStyles } from "./mainApplication.styles";
 import { store } from "../../stores/AppStore";
 import { Toast } from "../Toast/Toast";
 
@@ -26,7 +24,6 @@ export class MainApplication {
     this.initializeDOMElements();
     this.initializeComponents();
     this.setupEventListeners();
-    this.initializeStyles();
     new Toast();
   }
 
@@ -148,18 +145,10 @@ export class MainApplication {
     return newIframe;
   }
 
-  private initializeStyles(): void {
-    CSSManager.getInstance().addStyles(
-      "main-application",
-      mainApplicationStyles
-    );
-  }
-
   public destroy(): void {
     this.chat?.destroy();
     this.codeEditor?.destroy();
     this.csvUploader?.destroy?.();
     this.codeDownloader?.destroy?.();
-    CSSManager.getInstance().removeStyles("main-application");
   }
 }

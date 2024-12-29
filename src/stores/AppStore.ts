@@ -10,6 +10,7 @@ function createAppStore() {
     () => csvData.value !== null && csvData.value.length > 0
   );
   const toastMessage = signal<string | null>(null);
+  const pendingErrorPrompt = signal<string | null>(null);
 
   // Editor state
   const activeEditor = signal<EditorType>("combined");
@@ -32,6 +33,7 @@ function createAppStore() {
     isGenerating,
     error,
     toastMessage,
+    pendingErrorPrompt,
 
     // Keep existing methods
     setData(data: any[] | null) {
@@ -102,6 +104,14 @@ function createAppStore() {
 
     clearData() {
       csvData.value = null;
+    },
+
+    sendToAssistant(errorPrompt: string) {
+      this.pendingErrorPrompt.value = errorPrompt;
+    },
+
+    clearPendingErrorPrompt() {
+      this.pendingErrorPrompt.value = null;
     },
   };
 }

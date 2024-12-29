@@ -4,8 +4,6 @@ import { ButtonSpinner } from "../ButtonSpinner/ButtonSpinner";
 import { designAssistantInstance } from "../../design-assistant-bot";
 import { CodeEditorComponent } from "../CodeEditor/CodeEditorComponent";
 import { CsvUploader } from "../CsvUploader";
-import { CSSManager } from "../../utils/css-manager";
-import { chatStyles } from "./chat.styles";
 import { store } from "../../stores/AppStore";
 import { effect } from "@preact/signals-core";
 
@@ -45,7 +43,6 @@ export class Chat {
     this.promptInput.onkeydown = this.handleKeyDown;
 
     // Initialize styles and listeners
-    CSSManager.getInstance().addStyles("chat", chatStyles);
     chatContext.onMessagesChange(this.updateChatUI);
 
     // Setup loading state effect
@@ -197,6 +194,5 @@ export class Chat {
 
     // Clean up components
     this.buttonSpinner.destroy();
-    CSSManager.getInstance().removeStyles("chat");
   }
 }
