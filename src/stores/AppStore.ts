@@ -99,6 +99,10 @@ function createAppStore() {
       javascriptContent.value = "";
       combinedContent.value = "";
     },
+
+    clearData() {
+      csvData.value = null;
+    },
   };
 }
 

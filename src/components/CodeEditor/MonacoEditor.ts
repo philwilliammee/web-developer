@@ -98,7 +98,7 @@ export class MonacoEditor {
 
     this.editor = monaco.editor.create(this.container, {
       value: this.value,
-      language: this.type, // Now using the correct language type
+      language: this.type,
       theme: "vs-light",
       automaticLayout: true,
       minimap: {
@@ -122,9 +122,12 @@ export class MonacoEditor {
       },
     });
 
-    this.editor.onDidChangeModelContent(() => {
-      this.value = this.editor?.getValue() || "";
-      this.onChange(this.value);
+    let isSettingValue = false;
+    this.editor.onDidChangeModelContent((e) => {
+      if (!isSettingValue) {
+        this.value = this.editor?.getValue() || "";
+        this.onChange(this.value);
+      }
     });
 
     // Add type-specific class to container for styling
@@ -137,7 +140,33 @@ export class MonacoEditor {
 
   public setValue(value: string) {
     if (this.editor) {
-      this.editor.setValue(value);
+      // Store current positions
+      const position = this.editor.getPosition();
+      const scrollTop = this.editor.getScrollTop();
+      const scrollLeft = this.editor.getScrollLeft();
+
+      // Only update if value is different
+      if (this.getValue() !== value) {
+        const model = this.editor.getModel();
+        if (model) {
+          model.pushEditOperations(
+            [],
+            [
+              {
+                range: model.getFullModelRange(),
+                text: value,
+              },
+            ],
+            () => null
+          );
+        }
+      }
+
+      // Restore positions
+      if (position) {
+        this.editor.setPosition(position);
+        this.editor.setScrollPosition({ scrollTop, scrollLeft });
+      }
     }
     this.value = value;
   }

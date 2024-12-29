@@ -1,7 +1,7 @@
 // src/components/CsvUploader.ts
 import { store } from "../stores/AppStore";
 import { parseCSV } from "../utils/csvParser";
-import { signal } from "@preact/signals-core";
+import { effect } from "@preact/signals-core";
 
 export class CsvUploader {
   private fileInput: HTMLInputElement;
@@ -9,7 +9,7 @@ export class CsvUploader {
   private uploadIcon: HTMLElement;
   private clearIcon: HTMLElement;
   private buttonText: HTMLElement;
-  private hasData = signal<boolean>(false);
+  private cleanup!: () => void;
 
   constructor() {
     // Get DOM elements
@@ -34,6 +34,15 @@ export class CsvUploader {
     }
 
     this.setupEventListeners();
+    this.setupStoreSubscription();
+  }
+
+  private setupStoreSubscription(): void {
+    // React to store's hasData changes
+    this.cleanup = effect(() => {
+      const hasData = store.hasData.value;
+      this.updateUIState(hasData);
+    });
   }
 
   private setupEventListeners(): void {
@@ -42,8 +51,9 @@ export class CsvUploader {
   }
 
   private handleButtonClick = (e: MouseEvent) => {
-    if (this.hasData.value) {
+    if (store.hasData.value) {
       e.preventDefault();
+      e.stopPropagation(); // Prevent label from triggering file input
       this.handleClearData();
     }
   };
@@ -58,15 +68,12 @@ export class CsvUploader {
       try {
         const text = e.target?.result as string;
         const data = parseCSV(text);
-
-        // Update dataStore directly
         store.setData(data);
-
-        this.updateUIState(true);
-        console.log("CSV data loaded:", data);
+        store.showToast("CSV data loaded successfully! 📊");
       } catch (error) {
         console.error("Error parsing CSV:", error);
-        alert("Error parsing CSV file");
+        store.setError("Error parsing CSV file");
+        store.showToast("Error parsing CSV file ❌");
       }
     };
 
@@ -74,20 +81,33 @@ export class CsvUploader {
   };
 
   private handleClearData = () => {
-    store.clear();
-    this.updateUIState(false);
-    this.fileInput.value = "";
+    store.clearData();
+    this.fileInput.value = ""; // Clear the file input
+    store.showToast("CSV data cleared 🗑️");
   };
 
   private updateUIState(hasData: boolean): void {
-    this.hasData.value = hasData;
+    // Update icons
     this.uploadIcon.classList.toggle("hidden", hasData);
     this.clearIcon.classList.toggle("hidden", !hasData);
+
+    // Update text
     this.buttonText.textContent = hasData ? "Clear CSV" : "Upload CSV";
-    this.fileInput.style.display = hasData ? "none" : "block";
+
+    // Update file input visibility
+    if (hasData) {
+      this.fileInput.style.pointerEvents = "none";
+      this.fileInput.style.opacity = "0";
+      this.fileInput.style.position = "absolute";
+    } else {
+      this.fileInput.style.pointerEvents = "auto";
+      this.fileInput.style.opacity = "1";
+      this.fileInput.style.position = "relative";
+    }
   }
 
   public destroy(): void {
+    this.cleanup(); // Clean up the effect
     this.fileInput.removeEventListener("change", this.handleFileUpload);
     this.uploadButton.removeEventListener("click", this.handleButtonClick);
   }

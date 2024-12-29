@@ -404,6 +404,15 @@ h1 {
   height: 20px;
 }
 
+.file-button.upload {
+  position: relative;
+}
+
+.file-button.upload input[type="file"] {
+  transition: opacity 0.3s ease;
+}
+
+
 
 /* In styles.css or a new tabs.css */
 .tab-content > * {
