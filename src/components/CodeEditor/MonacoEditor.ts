@@ -5,7 +5,10 @@ import HtmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
 import CssWorker from "monaco-editor/esm/vs/language/css/css.worker?worker";
 import JsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
 import JsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
-import { EditorType } from "./CodeEditorComponent";
+
+interface MonacoEditorOptions {
+  readOnly?: boolean;
+}
 
 export class MonacoEditor {
   private editor: monaco.editor.IStandaloneCodeEditor | null = null;
@@ -13,17 +16,20 @@ export class MonacoEditor {
   private value: string;
   private onChange: (value: string) => void;
   private type: "html" | "css" | "javascript" | "json";
+  private options: MonacoEditorOptions = {};
 
   constructor(
     container: HTMLElement,
     initialValue: string = "",
     onChange: (value: string) => void,
-    type: "html" | "css" | "javascript" | "json"
+    type: "html" | "css" | "javascript" | "json",
+    options: MonacoEditorOptions = {}
   ) {
     this.container = container;
     this.value = initialValue;
     this.onChange = onChange;
     this.type = type;
+    this.options = options;
 
     this.initMonacoEnvironment();
     this.init();
@@ -92,12 +98,13 @@ export class MonacoEditor {
 
     this.editor = monaco.editor.create(this.container, {
       value: this.value,
-      language: this.type, // Now using the correct language type
+      language: this.type,
       theme: "vs-light",
       automaticLayout: true,
       minimap: {
         enabled: false,
       },
+      readOnly: this.options.readOnly,
       scrollBeyondLastLine: false,
       fontSize: 14,
       lineNumbers: "on",
@@ -115,9 +122,12 @@ export class MonacoEditor {
       },
     });
 
-    this.editor.onDidChangeModelContent(() => {
-      this.value = this.editor?.getValue() || "";
-      this.onChange(this.value);
+    let isSettingValue = false;
+    this.editor.onDidChangeModelContent((e) => {
+      if (!isSettingValue) {
+        this.value = this.editor?.getValue() || "";
+        this.onChange(this.value);
+      }
     });
 
     // Add type-specific class to container for styling
@@ -130,7 +140,33 @@ export class MonacoEditor {
 
   public setValue(value: string) {
     if (this.editor) {
-      this.editor.setValue(value);
+      // Store current positions
+      const position = this.editor.getPosition();
+      const scrollTop = this.editor.getScrollTop();
+      const scrollLeft = this.editor.getScrollLeft();
+
+      // Only update if value is different
+      if (this.getValue() !== value) {
+        const model = this.editor.getModel();
+        if (model) {
+          model.pushEditOperations(
+            [],
+            [
+              {
+                range: model.getFullModelRange(),
+                text: value,
+              },
+            ],
+            () => null
+          );
+        }
+      }
+
+      // Restore positions
+      if (position) {
+        this.editor.setPosition(position);
+        this.editor.setScrollPosition({ scrollTop, scrollLeft });
+      }
     }
     this.value = value;
   }

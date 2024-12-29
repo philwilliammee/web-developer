@@ -1,77 +1,110 @@
-// stores/data.store.ts
-import { signal, computed } from '@preact/signals-core';
+// stores/AppStore.ts
+import { signal, computed } from "@preact/signals-core";
 
-interface DataStore {
-  data: any[] | null;
-  hasData: boolean;
+export type EditorType = "html" | "css" | "javascript" | "combined" | "data";
+
+function createAppStore() {
+  // Core data signals
+  const csvData = signal<any[] | null>(null);
+  const hasData = computed(
+    () => csvData.value !== null && csvData.value.length > 0
+  );
+  const toastMessage = signal<string | null>(null);
+
+  // Editor state
+  const activeEditor = signal<EditorType>("combined");
+  const htmlContent = signal("");
+  const cssContent = signal("");
+  const javascriptContent = signal("");
+  const combinedContent = signal("");
+  const isGenerating = signal(false);
+  const error = signal<string | null>(null);
+
+  return {
+    // Expose signals
+    csvData,
+    hasData,
+    activeEditor,
+    htmlContent,
+    cssContent,
+    javascriptContent,
+    combinedContent,
+    isGenerating,
+    error,
+    toastMessage,
+
+    // Keep existing methods
+    setData(data: any[] | null) {
+      csvData.value = data;
+    },
+
+    getData(): any[] | null {
+      return csvData.value;
+    },
+
+    updateCode(type: "html" | "css" | "javascript", content: string) {
+      switch (type) {
+        case "html":
+          htmlContent.value = content;
+          break;
+        case "css":
+          cssContent.value = content;
+          break;
+        case "javascript":
+          javascriptContent.value = content;
+          break;
+      }
+    },
+
+    updateCombinedCode(code: string) {
+      combinedContent.value = code;
+    },
+
+    getCodeContent() {
+      return {
+        html: htmlContent.value,
+        css: cssContent.value,
+        javascript: javascriptContent.value,
+        combinedCode: combinedContent.value,
+      };
+    },
+
+    setAllCode(content: { html: string; css: string; javascript: string }) {
+      htmlContent.value = content.html;
+      cssContent.value = content.css;
+      javascriptContent.value = content.javascript;
+    },
+
+    setActiveEditor(editor: EditorType) {
+      activeEditor.value = editor;
+    },
+
+    setError(errorMessage: string | null) {
+      error.value = errorMessage; // use errorMessage instead of error
+    },
+
+    setGenerating(generating: boolean) {
+      isGenerating.value = generating;
+    },
+
+    showToast(message: string) {
+      toastMessage.value = message;
+    },
+
+    clear() {
+      csvData.value = null;
+      error.value = null;
+      htmlContent.value = "";
+      cssContent.value = "";
+      javascriptContent.value = "";
+      combinedContent.value = "";
+    },
+
+    clearData() {
+      csvData.value = null;
+    },
+  };
 }
 
-class AppStore {
-  private static instance: AppStore;
-
-  private constructor() {
-    // Private constructor for singleton
-  }
-
-  public static getInstance(): AppStore {
-    if (!AppStore.instance) {
-      AppStore.instance = new AppStore();
-    }
-    return AppStore.instance;
-  }
-
-  // Existing signals
-  public readonly csvData = signal<any[] | null>(null);
-  public readonly hasData = computed(() => {
-    return this.csvData.value !== null && this.csvData.value.length > 0;
-  });
-
-  // Additional signals
-  public readonly isGenerating = signal<boolean>(false);
-  public readonly error = signal<string | null>(null);
-
-  public setData(data: any[] | null) {
-    this.csvData.value = data;
-  }
-
-  public getData(): any[] | null {
-    return this.csvData.value;
-  }
-
-  public clear() {
-    this.csvData.value = null;
-    this.error.value = null;
-  }
-
-  public setError(error: string | null) {
-    this.error.value = error;
-  }
-
-  public setGenerating(isGenerating: boolean) {
-    this.isGenerating.value = isGenerating;
-  }
-
-    // Add code-related signals
-    public readonly codeContent = signal<{
-      html: string;
-      css: string;
-      javascript: string;
-      combinedCode: string;
-    }>({
-      html: '',
-      css: '',
-      javascript: '',
-      combinedCode: ''
-    });
-
-    public setCodeContent(content: {
-      html: string;
-      css: string;
-      javascript: string;
-      combinedCode: string;
-    }) {
-      this.codeContent.value = content;
-    }
-}
-
-export const dataStore = AppStore.getInstance();
+const store = createAppStore();
+export { store };

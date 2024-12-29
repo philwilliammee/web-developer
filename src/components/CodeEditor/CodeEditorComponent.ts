@@ -1,25 +1,18 @@
 import { MonacoEditor } from "./MonacoEditor";
 import { codeEditorStyles } from "./codeEditor.styles";
 import { CSSManager } from "../../utils/css-manager";
-import { dataStore } from "../../stores/AppStore";
+import { store } from "../../stores/AppStore";
+import { effect } from "@preact/signals-core";
 
-export interface CodeEditorState {
-  html: string;
-  css: string;
-  javascript: string;
-  combinedCode: string;
-  data: any[];
-}
-
-export type EditorType = "html" | "css" | "javascript" | "combined" | "data";
+type EditorType = "html" | "css" | "javascript" | "combined" | "data";
 type EditorMap = Record<EditorType, MonacoEditor>;
 
 export class CodeEditorComponent {
   private container: HTMLElement;
   private editors!: EditorMap;
-  private activeEditor: EditorType = "combined";
   private editorTabs: NodeListOf<HTMLButtonElement>;
   private editorsContainer: HTMLElement;
+  private cleanupFns: Array<() => void> = [];
 
   constructor(containerId: string) {
     CSSManager.getInstance().addStyles("code-editor", codeEditorStyles);
@@ -44,6 +37,7 @@ export class CodeEditorComponent {
 
     this.setupEditors();
     this.setupTabListeners();
+    this.setupStoreSubscriptions();
   }
 
   private createEditorContainer(id: string, type: EditorType): HTMLElement {
@@ -51,42 +45,43 @@ export class CodeEditorComponent {
     container.id = id;
     container.className = `editor-container ${type}-editor`;
     container.style.height = "100%";
-    container.style.display = "none"; // Hide initially
+    container.style.display = "none";
     this.editorsContainer.appendChild(container);
     return container;
   }
 
   private setupEditors() {
-    const defaultOnChange = (value: string) => {
-      if (this.activeEditor !== "combined" && this.activeEditor !== "data") {
-        this.updateCombinedView();
+    const handleEditorChange = (type: EditorType, value: string) => {
+      if (type === "html" || type === "css" || type === "javascript") {
+        store.updateCode(type, value);
       }
     };
 
     this.editors = {
       html: new MonacoEditor(
         this.createEditorContainer("htmlEditor", "html"),
-        "",
-        defaultOnChange,
+        store.htmlContent.value,
+        (value) => handleEditorChange("html", value),
         "html"
       ),
       css: new MonacoEditor(
         this.createEditorContainer("cssEditor", "css"),
-        "",
-        defaultOnChange,
+        store.cssContent.value,
+        (value) => handleEditorChange("css", value),
         "css"
       ),
       javascript: new MonacoEditor(
         this.createEditorContainer("javascriptEditor", "javascript"),
-        "",
-        defaultOnChange,
+        store.javascriptContent.value,
+        (value) => handleEditorChange("javascript", value),
         "javascript"
       ),
       combined: new MonacoEditor(
         this.createEditorContainer("combinedEditor", "combined"),
         "",
-        () => {},
-        "html"
+        () => {}, // No onChange handler needed for read-only editor
+        "html",
+        { readOnly: true } // Make combined editor read-only
       ),
       data: new MonacoEditor(
         this.createEditorContainer("dataEditor", "data"),
@@ -96,26 +91,45 @@ export class CodeEditorComponent {
       ),
     };
 
-    // Show combined editor initially
-    this.editors.combined.show();
+    // Show initial editor
+    this.switchTab(store.activeEditor.value);
   }
 
-  private setupTabListeners() {
-    this.editorTabs.forEach((tab) => {
-      const editorType = tab.dataset.editor as EditorType;
-      if (editorType) {
-        tab.addEventListener("click", () => this.switchTab(editorType));
-      }
-    });
-  }
+  private setupStoreSubscriptions() {
+    // Subscribe to code changes and update combined view
+    this.cleanupFns.push(
+      effect(() => {
+        const content = store.getCodeContent();
+        this.updateEditorsFromStore(content);
 
-  private updateCombinedView() {
-    const combinedCode = this.generateCombinedCode(
-      this.editors.html.getValue(),
-      this.editors.css.getValue(),
-      this.editors.javascript.getValue()
+        // Generate and update combined code whenever individual editors change
+        const combinedCode = this.generateCombinedCode(
+          content.html,
+          content.css,
+          content.javascript
+        );
+        this.editors.combined.setValue(combinedCode);
+        store.updateCombinedCode(combinedCode);
+      })
     );
-    this.editors.combined.setValue(combinedCode);
+
+    // Subscribe to data changes
+    this.cleanupFns.push(
+      effect(() => {
+        const data = store.getData();
+        if (data) {
+          this.editors.data.setValue(JSON.stringify(data, null, 2));
+        }
+      })
+    );
+
+    // Subscribe to active editor changes
+    this.cleanupFns.push(
+      effect(() => {
+        const activeEditor = store.activeEditor.value;
+        this.switchTab(activeEditor);
+      })
+    );
   }
 
   private generateCombinedCode(
@@ -123,24 +137,61 @@ export class CodeEditorComponent {
     css: string,
     javascript: string
   ): string {
-    const data = dataStore.getData();
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    ${css}
-  </style>
-</head>
-<body>
-  ${html}
-  <script>
-    // Make data available to visualization
-    window.data = ${JSON.stringify(data || [])};
-    // Your visualization code
-    ${javascript}
-  </script>
-</body>
-</html>`;
+    const data = store.getData();
+    return /* html */ `<!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+      ${css}
+    </style>
+  </head>
+  <body>
+    ${html}
+    <script>
+      (function() {
+        try {
+          // Set data globally so it's accessible in the visualization code
+          window.data = ${JSON.stringify(data || [])};
+          // Your visualization code
+          ${javascript}
+        } catch (error) {
+          console.error('Error in visualization:', error);
+          document.body.innerHTML += '<div style="color: red; padding: 1rem;">Error: ' + error.message + '</div>';
+        }
+      })();
+    </script>
+  </body>
+  </html>`;
+  }
+
+  private setupTabListeners() {
+    this.editorTabs.forEach((tab) => {
+      const editorType = tab.dataset.editor as EditorType;
+      if (editorType) {
+        tab.addEventListener("click", () => {
+          store.setActiveEditor(editorType);
+        });
+      }
+    });
+  }
+
+  private updateEditorsFromStore(
+    content: ReturnType<typeof store.getCodeContent>
+  ) {
+    this.editors.html.setValue(content.html);
+    this.editors.css.setValue(content.css);
+    this.editors.javascript.setValue(content.javascript);
+    this.editors.combined.setValue(content.combinedCode);
   }
 
   private switchTab(tabName: EditorType) {
@@ -149,7 +200,6 @@ export class CodeEditorComponent {
 
     // Show selected editor
     this.editors[tabName].show();
-    this.activeEditor = tabName;
 
     // Update tab styling
     this.editorTabs.forEach((tab) => {
@@ -160,58 +210,23 @@ export class CodeEditorComponent {
     this.editors[tabName].layout();
   }
 
-  public updateCode(code: CodeEditorState) {
-    try {
-      this.editors.html.setValue(code.html || "");
-      this.editors.css.setValue(code.css || "");
-      this.editors.javascript.setValue(code.javascript || "");
-      this.editors.combined.setValue(code.combinedCode || "");
-
-      if (code.data) {
-        this.editors.data.setValue(JSON.stringify(code.data, null, 2));
-      }
-
-      // Force layout update
-      Object.values(this.editors).forEach((editor) => editor.layout());
-    } catch (error) {
-      console.error("Error updating code editors:", error);
-      this.showError("Failed to update code editors");
-    }
+  public getCode() {
+    return store.getCodeContent();
   }
 
-  private showError(message: string) {
-    const errorElement = document.createElement("div");
-    errorElement.className = "editor-error";
-    errorElement.textContent = message;
-    this.container.appendChild(errorElement);
-
-    setTimeout(() => {
-      errorElement.remove();
-    }, 5000);
-  }
-
-  public getCode(): CodeEditorState {
-    return {
-      html: this.editors.html.getValue(),
-      css: this.editors.css.getValue(),
-      javascript: this.editors.javascript.getValue(),
-      combinedCode: this.editors.combined.getValue(),
-      data: JSON.parse(this.editors.data.getValue() || "[]"),
-    };
-  }
-
-  public mount(parent: HTMLElement) {
-    parent.appendChild(this.container);
-    this.editors[this.activeEditor].layout();
+  public layoutEditors(): void {
+    Object.values(this.editors).forEach((editor) => editor.layout());
   }
 
   public destroy() {
+    // Clean up store subscriptions
+    this.cleanupFns.forEach((cleanup) => cleanup());
+
+    // Clean up editors
     Object.values(this.editors).forEach((editor) => editor.dispose());
+
+    // Clean up DOM
     this.container.remove();
     CSSManager.getInstance().removeStyles("code-editor");
-  }
-
-  public getElement(): HTMLElement {
-    return this.container;
   }
 }
