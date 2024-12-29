@@ -100,6 +100,7 @@ export class Chat {
 
             store.setAllCode({ html, css, javascript });
             this.promptInput.value = "";
+            store.showToast("Design generated successfully");
             break;
           }
         } catch (error: any) {

@@ -6,6 +6,7 @@ import { CodeEditorComponent } from "../CodeEditor/CodeEditorComponent";
 import { CSSManager } from "../../utils/css-manager";
 import { mainApplicationStyles } from "./mainApplication.styles";
 import { store } from "../../stores/AppStore";
+import { Toast } from "../Toast/Toast";
 
 export class MainApplication {
   // Components
@@ -28,6 +29,7 @@ export class MainApplication {
     this.initializeComponents();
     this.setupEventListeners();
     this.initializeStyles();
+    new Toast();
   }
 
   private initializeDOMElements(): void {

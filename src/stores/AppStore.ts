@@ -9,6 +9,7 @@ function createAppStore() {
   const hasData = computed(
     () => csvData.value !== null && csvData.value.length > 0
   );
+  const toastMessage = signal<string | null>(null);
 
   // Editor state
   const activeEditor = signal<EditorType>("combined");
@@ -30,6 +31,7 @@ function createAppStore() {
     combinedContent,
     isGenerating,
     error,
+    toastMessage,
 
     // Keep existing methods
     setData(data: any[] | null) {
@@ -78,13 +80,15 @@ function createAppStore() {
     },
 
     setError(errorMessage: string | null) {
-      // renamed parameter to avoid naming conflict
       error.value = errorMessage; // use errorMessage instead of error
     },
 
     setGenerating(generating: boolean) {
-      // renamed parameter
-      isGenerating.value = generating; // now we're clearly accessing the signal
+      isGenerating.value = generating;
+    },
+
+    showToast(message: string) {
+      toastMessage.value = message;
     },
 
     clear() {

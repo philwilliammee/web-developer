@@ -424,3 +424,48 @@ h1 {
   opacity: 1;
   border-bottom: 2px solid var(--primary-color);
 }
+
+.toast {
+  position: fixed;
+  bottom: 20px;  /* Changed from bottom to top */
+  left: 50vw;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 8px;
+  background: #4CAF50;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  /* Optional: Add animation */
+  animation: slideIn 0.3s ease-out;
+  z-index: 2000;
+}
+
+/* Optional: Add slide-in animation */
+@keyframes slideIn {
+  from {
+      transform: translateX(100%);
+      opacity: 0;
+  }
+  to {
+      transform: translateX(0);
+      opacity: 1;
+  }
+}
+
+.toast::backdrop {
+  background: transparent;
+}
+
+.toast-content {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Optional: Add different colors for success/error states */
+.toast.success {
+  background: #4CAF50;
+}
+
+.toast.error {
+  background: #f44336;
+}
