@@ -1,5 +1,4 @@
 import { Chat } from "../Chat/chat";
-import { ConsoleWrapper } from "../../console-wrapper";
 import { CsvUploader } from "../CsvUploader";
 import { CodeDownloader } from "../CodeDownloader";
 import { CodeEditorComponent } from "../CodeEditor/CodeEditorComponent";
@@ -14,7 +13,6 @@ export class MainApplication {
   private chat!: Chat;
   private csvUploader!: CsvUploader;
   private codeDownloader!: CodeDownloader;
-  private consoleWrapper!: ConsoleWrapper;
 
   // DOM Elements
   private tabs!: NodeListOf<HTMLButtonElement>;
@@ -73,7 +71,6 @@ export class MainApplication {
     // Initialize utility components
     this.csvUploader = new CsvUploader();
     this.codeDownloader = new CodeDownloader();
-    this.consoleWrapper = new ConsoleWrapper();
 
     // Initialize Chat
     this.chat = new Chat({
@@ -115,20 +112,16 @@ export class MainApplication {
       const code = this.codeEditor.getCode();
       const iframe = this.resetIframe();
 
+      // @todo feedback assistant if iframe has write error.
+
       const iframeDocument = iframe.contentWindow?.document;
       if (!iframeDocument) {
         throw new Error("Unable to access the iframe's document");
       }
 
-      this.consoleWrapper.capture();
-
       iframeDocument.open();
       iframeDocument.write(code.combinedCode);
       iframeDocument.close();
-
-      console.log("Code executed successfully");
-      const consoleOutput = this.consoleWrapper.getLogs();
-      console.log("assistant", `Code executed successfully\n${consoleOutput}`);
 
       // Switch to preview tab
       const previewTab = document.querySelector('[data-tab="iframeContainer"]');
@@ -137,9 +130,7 @@ export class MainApplication {
       }
     } catch (error: any) {
       console.error("Error executing code:", error);
-      console.log("assistant", `Error: ${error.message}`);
-    } finally {
-      this.consoleWrapper.restore();
+      store.setError(error.message);
     }
   }
 
@@ -157,30 +148,11 @@ export class MainApplication {
     return newIframe;
   }
 
-  private getDefaultCombinedCode(): string {
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    h1 { color: red; }
-  </style>
-</head>
-<body>
-  <h1>Hello, World!</h1>
-  <script>
-    console.log("Hello, World!");
-  </script>
-</body>
-</html>`;
-  }
-
   private initializeStyles(): void {
     CSSManager.getInstance().addStyles(
       "main-application",
       mainApplicationStyles
     );
-    // this.codeEditorContainer.style.height = "500px";
-    // this.codeEditorContainer.style.position = "relative";
   }
 
   public destroy(): void {

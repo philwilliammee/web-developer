@@ -25,7 +25,7 @@ export class Chat {
   private promptInput: HTMLTextAreaElement;
   private chatMessages: HTMLElement;
   private button: HTMLButtonElement;
-  private cleanup: () => void;
+  private cleanupFns: Array<() => void> = [];
 
   constructor(dependencies: ChatDependencies) {
     // Initialize DOM elements
@@ -49,11 +49,29 @@ export class Chat {
     chatContext.onMessagesChange(this.updateChatUI);
 
     // Setup loading state effect
-    this.cleanup = effect(() => {
-      const isGenerating = store.isGenerating.value;
-      this.promptInput.disabled = isGenerating;
-      isGenerating ? this.buttonSpinner.show() : this.buttonSpinner.hide();
-    });
+    this.cleanupFns.push(
+      effect(() => {
+        const isGenerating = store.isGenerating.value;
+        this.promptInput.disabled = isGenerating;
+        isGenerating ? this.buttonSpinner.show() : this.buttonSpinner.hide();
+      })
+    );
+
+    // Setup error prompt handling
+    this.cleanupFns.push(
+      effect(() => {
+        const errorPrompt = store.pendingErrorPrompt.value;
+        if (errorPrompt) {
+          this.handleErrorPrompt(errorPrompt);
+        }
+      })
+    );
+  }
+
+  private async handleErrorPrompt(prompt: string) {
+    this.promptInput.value = prompt;
+    store.clearPendingErrorPrompt();
+    await this.generateCodeWithRetry();
   }
 
   private handleGenerate = (e: MouseEvent): void => {
@@ -100,7 +118,7 @@ export class Chat {
 
             store.setAllCode({ html, css, javascript });
             this.promptInput.value = "";
-            store.showToast("Design generated successfully");
+            store.showToast("Design generated successfully ✨");
             break;
           }
         } catch (error: any) {
@@ -109,6 +127,7 @@ export class Chat {
             error.message
           }. Retrying...`;
           chatContext.addAssistantMessage(errorMessage, "Error");
+          store.showToast(`Retrying attempt ${attempt + 1} of ${retries} ⏳`);
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
       }
@@ -118,6 +137,7 @@ export class Chat {
         `Error generating design: ${error.message}`,
         "Error"
       );
+      store.showToast("Error generating design ❌");
     } finally {
       store.setGenerating(false);
     }
@@ -168,9 +188,14 @@ export class Chat {
   }
 
   public destroy(): void {
-    this.cleanup(); // Clean up the effect
+    // Clean up all effects
+    this.cleanupFns.forEach((cleanup) => cleanup());
+
+    // Remove event listeners
     this.button.onclick = null;
     this.promptInput.onkeydown = null;
+
+    // Clean up components
     this.buttonSpinner.destroy();
     CSSManager.getInstance().removeStyles("chat");
   }
