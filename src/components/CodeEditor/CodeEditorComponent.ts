@@ -1,6 +1,4 @@
 import { MonacoEditor } from "./MonacoEditor";
-import { codeEditorStyles } from "./codeEditor.styles";
-import { CSSManager } from "../../utils/css-manager";
 import { store } from "../../stores/AppStore";
 import { effect } from "@preact/signals-core";
 
@@ -15,8 +13,6 @@ export class CodeEditorComponent {
   private cleanupFns: Array<() => void> = [];
 
   constructor(containerId: string) {
-    CSSManager.getInstance().addStyles("code-editor", codeEditorStyles);
-
     const container = document.getElementById(containerId);
     if (!container) {
       throw new Error(`Container with ID ${containerId} not found`);
@@ -227,6 +223,5 @@ export class CodeEditorComponent {
 
     // Clean up DOM
     this.container.remove();
-    CSSManager.getInstance().removeStyles("code-editor");
   }
 }

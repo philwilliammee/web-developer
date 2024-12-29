@@ -4,9 +4,9 @@ export class ButtonSpinner {
   private originalContent: string;
 
   constructor() {
-    const button = document.querySelector('.generate-btn') as HTMLButtonElement;
+    const button = document.querySelector(".generate-btn") as HTMLButtonElement;
     if (!button) {
-      throw new Error('Generate button not found in DOM');
+      throw new Error("Generate button not found in DOM");
     }
 
     this.button = button;
