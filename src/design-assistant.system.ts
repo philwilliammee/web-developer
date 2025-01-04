@@ -26,6 +26,7 @@ Pre-loaded Libraries (DO NOT include these in HTML, they are already loaded):
 - D3.js (v7): Available globally as 'd3'
 - Chart.js: Available globally as 'Chart'
 - Three.js (r128): Available globally as 'THREE'
+- Plotly.js (latest): Available globally as 'Plotly'
 
 Data Access:
 - CSV data is available globally as 'window.data'
