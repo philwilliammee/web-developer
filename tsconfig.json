@@ -18,7 +18,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "types": ["node", "vite/client"],
   },
-  "include": ["src", ".local/notebook.ts", ".local/cell.ts", ".local/ResizeHandler.ts"]
+  "include": ["src", "vite-env.d.ts", "server.ts", "server"],
 }
